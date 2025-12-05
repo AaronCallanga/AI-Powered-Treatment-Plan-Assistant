@@ -1,0 +1,577 @@
+.patient-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.patient-list h1 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+}
+
+.patient-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+}
+
+.patient-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.patient-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.patient-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.patient-name {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 0;
+  flex: 1;
+  line-height: 1.3;
+}
+
+.patient-meta {
+  color: #7f8c8d;
+  font-size: 0.9rem;
+}
+
+.status-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-pending {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.status-reviewed {
+  background: #cce5ff;
+  color: #004085;
+}
+
+.status-treatment_planned {
+  background: #d4edda;
+  color: #155724;
+}
+
+.patient-complaint {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.complaint-icon {
+  font-size: 1.5rem;
+}
+
+.complaint-details {
+  flex: 1;
+}
+
+.complaint-condition {
+  font-weight: 600;
+  color: #2c3e50;
+  text-transform: capitalize;
+}
+
+.complaint-severity {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+}
+
+.patient-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  color: #95a5a6;
+  text-transform: uppercase;
+}
+
+.info-value {
+  font-weight: 500;
+  color: #34495e;
+}
+
+.patient-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  padding: 0.25rem 0.5rem;
+  background: #e8f4fc;
+  color: #3498db;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.tag.allergy {
+  background: #fdeaea;
+  color: #e74c3c;
+}
+
+.tag.condition {
+  background: #fff3cd;
+  color: #856404;
+}
+
+/* Medications Section */
+.medications-section {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.medications-header {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.medications-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.medication-item-small {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+.medication-item-small .med-name {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.85rem;
+}
+
+.medication-item-small .med-dose {
+  font-size: 0.75rem;
+  color: #7f8c8d;
+}
+
+.medications-count {
+  font-size: 0.85rem;
+  color: #7f8c8d;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  color: #7f8c8d;
+}
+
+.empty-state h3 {
+  margin-bottom: 0.5rem;
+}
+
+.loading-spinner {
+  text-align: center;
+  padding: 3rem;
+  color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+  .patient-list {
+    padding: 1rem;
+  }
+
+  .patient-list h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .patient-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .patient-card {
+    padding: 1rem;
+  }
+
+  .patient-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .patient-name {
+    font-size: 1.1rem;
+  }
+
+  .patient-info-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .patient-tags {
+    gap: 0.3rem;
+  }
+
+  .tag {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+  }
+}
+
+/* View Treatment Button */
+.view-treatment-btn {
+  width: 100%;
+  margin-top: 1rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-treatment-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.view-treatment-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Treatment Modal Overlay */
+.treatment-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+/* Treatment Modal */
+.treatment-modal {
+  background: white;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.treatment-modal .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+  position: sticky;
+  top: 0;
+  background: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.treatment-modal .modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2c3e50;
+}
+
+.treatment-modal .modal-close {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #7f8c8d;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.treatment-modal .modal-close:hover {
+  color: #e74c3c;
+}
+
+.modal-patient-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+}
+
+.modal-patient-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #2c3e50;
+}
+
+.modal-status {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.modal-status.approved {
+  background: #d4edda;
+  color: #155724;
+}
+
+.modal-status.modified {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.modal-status.rejected {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.modal-status.pending {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+.modal-section {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.modal-section:last-of-type {
+  border-bottom: none;
+}
+
+.modal-section h4 {
+  margin: 0 0 0.75rem 0;
+  font-size: 0.9rem;
+  color: #7f8c8d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.modal-med-details {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.modal-med-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 0.5rem;
+}
+
+.modal-med-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  font-size: 0.85rem;
+  color: #5a6c7d;
+}
+
+.modal-med-info span {
+  white-space: nowrap;
+}
+
+.modal-instructions {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px dashed #dee2e6;
+  font-size: 0.85rem;
+  color: #5a6c7d;
+}
+
+.modal-risk {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.modal-risk.low {
+  background: #d4edda;
+}
+
+.modal-risk.medium {
+  background: #fff3cd;
+}
+
+.modal-risk.high {
+  background: #f8d7da;
+}
+
+.modal-risk.critical {
+  background: #f5c6cb;
+}
+
+.modal-risk .risk-icon {
+  font-size: 1.25rem;
+}
+
+.modal-risk .risk-level {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.modal-risk .risk-score {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: #5a6c7d;
+}
+
+.modal-interactions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.modal-interaction {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: #fff3cd;
+  font-size: 0.85rem;
+}
+
+.modal-interaction.severe,
+.modal-interaction.critical {
+  background: #f8d7da;
+}
+
+.modal-interaction .int-drugs {
+  font-weight: 500;
+  color: #2c3e50;
+}
+
+.modal-interaction .int-severity {
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.modal-interaction .int-severity.moderate {
+  background: #ffc107;
+  color: #212529;
+}
+
+.modal-interaction .int-severity.severe {
+  background: #dc3545;
+  color: white;
+}
+
+.modal-interaction .int-severity.critical {
+  background: #721c24;
+  color: white;
+}
+
+.modal-section.review-info {
+  background: #e8f4fc;
+}
+
+.modal-section.review-info p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
+  color: #2c3e50;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: #f8f9fa;
+  border-radius: 0 0 16px 16px;
+}
+
+.modal-actions .btn-secondary {
+  padding: 0.6rem 1.25rem;
+  background: #e9ecef;
+  color: #495057;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.modal-actions .btn-secondary:hover {
+  background: #dee2e6;
+}
+
+.modal-actions .btn-primary {
+  padding: 0.6rem 1.25rem;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.modal-actions .btn-primary:hover {
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
