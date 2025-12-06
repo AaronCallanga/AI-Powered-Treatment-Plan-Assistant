@@ -1,11 +1,15 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { EyeIcon, EyeOffIcon } from "./Icons";
+import { ButtonLoader } from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./Login.css";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -28,7 +32,20 @@ const Login = () => {
     setIsLoading(false);
 
     if (result.success) {
-      navigate("/dashboard");
+      // Check if there's a redirect URL stored (e.g., from QR code scan)
+      const redirectUrl = sessionStorage.getItem("redirectAfterLogin");
+      if (redirectUrl) {
+        sessionStorage.removeItem("redirectAfterLogin");
+        navigate(redirectUrl);
+      } else {
+        // Route based on user role
+        const userRole = result.user?.role;
+        if (userRole === "patient") {
+          navigate("/patient-portal");
+        } else {
+          navigate("/dashboard");
+        }
+      }
     } else {
       setErrorMessage(result.error || "Invalid credentials");
     }
@@ -38,7 +55,9 @@ const Login = () => {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1>Clinical Assistant</h1>
+          <div className="login-logo">
+            <img src="/logo.png" alt="MedicAI" className="login-logo-image" />
+          </div>
           <p>Sign in to your account</p>
         </div>
 
@@ -60,21 +79,48 @@ const Login = () => {
 
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              disabled={isLoading}
-              autoComplete="current-password"
-            />
+            <div className="password-input-wrapper">
+              <input
+                type={showPassword ? "text" : "password"}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                disabled={isLoading}
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword(!showPassword)}
+                tabIndex={-1}
+              >
+                {showPassword ? (
+                  <EyeOffIcon size={18} />
+                ) : (
+                  <EyeIcon size={18} />
+                )}
+              </button>
+            </div>
           </div>
 
           <button type="submit" className="login-button" disabled={isLoading}>
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? (
+              <>
+                <ButtonLoader />
+                <span>Signing in...</span>
+              </>
+            ) : (
+              "Sign In"
+            )}
           </button>
         </form>
+
+        <div className="login-footer">
+          <a href="/" className="back-link">
+            Back to Home
+          </a>
+        </div>
       </div>
     </div>
   );

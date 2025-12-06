@@ -24,8 +24,14 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "doctor"],
+      enum: ["admin", "doctor", "patient"],
       default: "doctor",
+    },
+    // Link to Patient record (only for patient role)
+    patientId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Patient",
+      default: null,
     },
     firstName: {
       type: String,

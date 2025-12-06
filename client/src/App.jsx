@@ -11,9 +11,17 @@ import PatientIntakeForm from "./components/PatientIntakeForm";
 import PatientList from "./components/PatientList";
 import ClinicalDashboard from "./components/ClinicalDashboard";
 import TreatmentWizard from "./components/TreatmentWizard";
+import TreatmentViewer from "./components/TreatmentViewer";
 import ChatBot from "./components/ChatBot";
 import Login from "./components/Login";
+import PatientPortal from "./components/PatientPortal";
 import ProtectedRoute from "./components/ProtectedRoute";
+import {
+  IntakeIcon,
+  PatientsIcon,
+  TreatmentIcon,
+  LogoutIcon,
+} from "./components/Icons";
 import "./App.css";
 
 function MainApp() {
@@ -21,7 +29,25 @@ function MainApp() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [serverStatus, setServerStatus] = useState("checking");
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+
+  // Close mobile menu when view changes
+  const handleViewChange = (view) => {
+    setCurrentView(view);
+    setMobileMenuOpen(false);
+  };
+
+  // Close mobile menu on escape key
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
 
   useEffect(() => {
     checkServerConnection();
@@ -29,7 +55,7 @@ function MainApp() {
 
   const checkServerConnection = async () => {
     try {
-      const response = await fetch("http://localhost:3000/");
+      const response = await fetch("http://localhost:5000/");
       if (response.ok) {
         setServerStatus("connected");
       } else {
@@ -70,33 +96,53 @@ function MainApp() {
     <div className="app">
       <nav className="nav">
         <div className="nav-brand">
-          <span>🏥</span>
-          MediAssist
+          <img src="/logo.png" alt="MedicAI" className="nav-logo" />
         </div>
-        <div className="nav-links">
+
+        {/* Mobile Menu Toggle Button */}
+        <button
+          className={`mobile-menu-toggle ${mobileMenuOpen ? "open" : ""}`}
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
+          aria-expanded={mobileMenuOpen}
+        >
+          <div className="hamburger-icon">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+        </button>
+
+        {/* Mobile Menu Overlay */}
+        <div
+          className={`mobile-menu-overlay ${mobileMenuOpen ? "open" : ""}`}
+          onClick={() => setMobileMenuOpen(false)}
+        />
+
+        <div className={`nav-links ${mobileMenuOpen ? "open" : ""}`}>
           <button
             className={`nav-link ${currentView === "intake" ? "active" : ""}`}
-            onClick={() => setCurrentView("intake")}
+            onClick={() => handleViewChange("intake")}
             title="New Intake"
           >
-            <span className="nav-icon">📋</span>
+            <IntakeIcon size={20} className="nav-icon" />
             <span className="nav-text">Intake</span>
           </button>
           <button
             className={`nav-link ${currentView === "patients" ? "active" : ""}`}
-            onClick={() => setCurrentView("patients")}
+            onClick={() => handleViewChange("patients")}
             title="Patients"
           >
-            <span className="nav-icon">👥</span>
+            <PatientsIcon size={20} className="nav-icon" />
             <span className="nav-text">Patients</span>
           </button>
           {selectedPatient && (
             <button
               className={`nav-link ${currentView === "wizard" ? "active" : ""}`}
-              onClick={() => setCurrentView("wizard")}
+              onClick={() => handleViewChange("wizard")}
               title="Treatment"
             >
-              <span className="nav-icon">🩺</span>
+              <TreatmentIcon size={20} className="nav-icon" />
               <span className="nav-text">Treatment</span>
             </button>
           )}
@@ -108,7 +154,8 @@ function MainApp() {
                 {user.firstName} {user.lastName}
               </span>
               <button className="logout-button" onClick={logout}>
-                Logout
+                <LogoutIcon size={16} />
+                <span>Logout</span>
               </button>
             </>
           )}
@@ -119,12 +166,13 @@ function MainApp() {
         {currentView === "intake" && (
           <PatientIntakeForm onSubmitSuccess={handleIntakeSuccess} />
         )}
-        {currentView === "patients" && (
+        {/* Keep PatientList mounted to preserve state and avoid re-fetching */}
+        <div style={{ display: currentView === "patients" ? "block" : "none" }}>
           <PatientList
             refreshTrigger={refreshTrigger}
             onSelectPatient={handleSelectPatient}
           />
-        )}
+        </div>
         {currentView === "wizard" && selectedPatient && (
           <TreatmentWizard
             patient={selectedPatient}
@@ -169,6 +217,16 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/patient-portal"
+            element={
+              <ProtectedRoute requiredRoles={["patient"]}>
+                <PatientPortal />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public QR code route - accessible to all, shows full details to authenticated doctors */}
+          <Route path="/treatment/:id" element={<TreatmentViewer />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>

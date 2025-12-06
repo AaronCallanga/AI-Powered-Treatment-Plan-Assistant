@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const API_BASE_URL = "http://localhost:3000/api";
+// Use environment variable with fallback for development
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -8,6 +10,7 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
   withCredentials: true, // Enable cookies for authentication
+  timeout: 30000, // 30 second timeout
 });
 
 // Add token to requests if it exists in localStorage
@@ -19,12 +22,45 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor for consistent error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    // Handle network errors
+    if (!error.response) {
+      error.message = "Network error. Please check your connection.";
+    }
+    // Handle timeout
+    if (error.code === "ECONNABORTED") {
+      error.message = "Request timed out. Please try again.";
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const patientAPI = {
-  // Get all patients
-  getAll: () => api.get("/patients"),
+  /**
+   * Get all patients with pagination and filtering
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number (default: 1)
+   * @param {number} params.limit - Items per page (default: 20, max: 100)
+   * @param {string} params.status - Filter by status
+   * @param {string} params.search - Search by name or condition
+   * @param {string} params.sortBy - Sort field (default: createdAt)
+   * @param {string} params.sortOrder - Sort order: 'asc' or 'desc' (default: desc)
+   * @param {string} params.fields - Comma-separated fields to return
+   */
+  getAll: (params = {}) => api.get("/patients", { params }),
+
+  // Legacy: Get all patients without pagination (for backwards compatibility)
+  getAllLegacy: () =>
+    api
+      .get("/patients", { params: { limit: 1000 } })
+      .then((res) => res.data.data || res.data),
 
   // Get single patient
-  getById: (id) => api.get(`/patients/${id}`),
+  getById: (id, fields) =>
+    api.get(`/patients/${id}`, { params: fields ? { fields } : undefined }),
 
   // Create new patient
   create: (patientData) => api.post("/patients", patientData),
@@ -40,14 +76,39 @@ export const treatmentAPI = {
   // Generate new treatment plan
   generate: (patientId) => api.post(`/treatments/generate/${patientId}`),
 
-  // Get all treatment plans
-  getAll: () => api.get("/treatments"),
+  /**
+   * Get all treatment plans with pagination and filtering
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number (default: 1)
+   * @param {number} params.limit - Items per page (default: 20, max: 100)
+   * @param {string} params.status - Filter by status
+   * @param {string} params.patientId - Filter by patient
+   * @param {string} params.riskLevel - Filter by risk level
+   * @param {string} params.sortBy - Sort field (default: createdAt)
+   * @param {string} params.sortOrder - Sort order: 'asc' or 'desc' (default: desc)
+   * @param {string} params.summary - 'true' for lightweight list response
+   */
+  getAll: (params = {}) => api.get("/treatments", { params }),
+
+  // Legacy: Get all treatment plans without pagination
+  getAllLegacy: () =>
+    api
+      .get("/treatments", { params: { limit: 1000 } })
+      .then((res) => res.data.data || res.data),
 
   // Get treatment plan by ID
   getById: (id) => api.get(`/treatments/${id}`),
 
-  // Get treatment plans for a patient
-  getByPatient: (patientId) => api.get(`/treatments/patient/${patientId}`),
+  /**
+   * Get treatment plans for a patient
+   * @param {string} patientId - Patient ID
+   * @param {Object} options - Optional parameters
+   * @param {boolean} options.summary - Return lightweight summary
+   */
+  getByPatient: (patientId, { summary = false } = {}) =>
+    api.get(`/treatments/patient/${patientId}`, {
+      params: summary ? { summary: "true" } : undefined,
+    }),
 
   // Get full analysis details
   getFullDetails: (id) => api.get(`/treatments/${id}/full-details`),
@@ -111,6 +172,19 @@ export const chatAPI = {
 
   // Check drug interactions
   checkInteractions: (drugs) => api.post("/chat/check-interactions", { drugs }),
+
+  // Text-to-speech - returns audio blob
+  textToSpeech: async (text, voice = "nova") => {
+    const response = await api.post(
+      "/chat/tts",
+      { text, voice },
+      {
+        responseType: "blob",
+        timeout: 60000, // 60 second timeout for audio generation
+      }
+    );
+    return response.data;
+  },
 };
 
 export const consultationAPI = {
@@ -151,6 +225,29 @@ export const consultationAPI = {
     api.post("/consultation/extract-from-text", { transcript }),
 };
 
+export const documentAPI = {
+  // Upload and process medical documents (PDF, Word, Excel, images, etc.)
+  uploadDocument: (file, onProgress) => {
+    const formData = new FormData();
+    formData.append("document", file);
+
+    return api.post("/documents/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      timeout: 60000, // 60 second timeout for document processing
+      onUploadProgress: (progressEvent) => {
+        if (onProgress) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          onProgress(percentCompleted);
+        }
+      },
+    });
+  },
+};
+
 export const authAPI = {
   // Login
   login: (username, password) =>
@@ -168,10 +265,21 @@ export const authAPI = {
 
 export const publicAPI = {
   // Get treatment plan by ID (public route for QR codes)
-  getTreatment: (id) =>
-    axios.get(`${API_BASE_URL}/public/treatment/${id}`, {
-      withCredentials: true,
-    }),
+  getTreatment: (id) => api.get(`/public/treatment/${id}`),
+};
+
+export const patientPortalAPI = {
+  // Get the logged-in patient's own profile
+  getProfile: () => api.get("/patient-portal/profile"),
+
+  // Update the logged-in patient's own profile
+  updateProfile: (data) => api.put("/patient-portal/profile", data),
+
+  // Get the logged-in patient's treatment plans
+  getTreatments: () => api.get("/patient-portal/treatments"),
+
+  // Get a specific treatment plan
+  getTreatment: (id) => api.get(`/patient-portal/treatment/${id}`),
 };
 
 export default api;

@@ -1,8 +1,39 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { patientAPI } from "../api/patientAPI";
 import ConsultationUpload from "./ConsultationUpload";
 import VoiceDictation from "./VoiceDictation";
 import DocumentUpload from "./DocumentUpload";
+import NaturalLanguageInput from "./NaturalLanguageInput";
+import {
+  FolderIcon,
+  MicIcon,
+  DocumentIcon,
+  ClipboardIcon,
+  MedicationIcon,
+  ChartIcon,
+  ExerciseIcon,
+  TargetIcon,
+  CloseIcon,
+  CheckIcon,
+  PlusIcon,
+  TrashIcon,
+  HeartIcon,
+  HeartPulseIcon,
+  BrainIcon,
+  DropletsIcon,
+  WarningIcon,
+  PillIcon,
+  ThermometerIcon,
+  LabIcon,
+  SuccessIcon,
+  ErrorIcon,
+  CopyIcon,
+  AIIcon,
+  ScrollTextIcon,
+} from "./Icons";
+import { ButtonLoader } from "./LoadingSpinner";
+import DrugAutocomplete from "./DrugAutocomplete";
+import "./LoadingSpinner.css";
 import "./PatientIntakeForm.css";
 
 const initialFormState = {
@@ -44,45 +75,223 @@ const initialFormState = {
 };
 
 const CONDITIONS_OPTIONS = [
-  { value: "diabetes", label: "Diabetes" },
-  { value: "hypertension", label: "Hypertension" },
-  { value: "heart_disease", label: "Heart Disease" },
-  { value: "asthma", label: "Asthma" },
-  { value: "arthritis", label: "Arthritis" },
-  { value: "depression", label: "Depression" },
-  { value: "anxiety", label: "Anxiety" },
-  { value: "thyroid_disorder", label: "Thyroid Disorder" },
-  { value: "pcos", label: "PCOS" },
-  { value: "hyperlipidemia", label: "High Cholesterol" },
+  {
+    value: "diabetes",
+    label: "Diabetes",
+    IconComponent: DropletsIcon,
+    color: "#ef4444",
+  },
+  {
+    value: "hypertension",
+    label: "Hypertension",
+    IconComponent: HeartPulseIcon,
+    color: "#dc2626",
+  },
+  {
+    value: "heart_disease",
+    label: "Heart Disease",
+    IconComponent: HeartIcon,
+    color: "#e11d48",
+  },
+  {
+    value: "asthma",
+    label: "Asthma",
+    IconComponent: ThermometerIcon,
+    color: "#0ea5e9",
+  },
+  {
+    value: "arthritis",
+    label: "Arthritis",
+    IconComponent: TargetIcon,
+    color: "#f59e0b",
+  },
+  {
+    value: "depression",
+    label: "Depression",
+    IconComponent: BrainIcon,
+    color: "#8b5cf6",
+  },
+  {
+    value: "anxiety",
+    label: "Anxiety",
+    IconComponent: BrainIcon,
+    color: "#a855f7",
+  },
+  {
+    value: "thyroid_disorder",
+    label: "Thyroid Disorder",
+    IconComponent: LabIcon,
+    color: "#14b8a6",
+  },
+  { value: "pcos", label: "PCOS", IconComponent: HeartIcon, color: "#ec4899" },
+  {
+    value: "hyperlipidemia",
+    label: "High Cholesterol",
+    IconComponent: ChartIcon,
+    color: "#f97316",
+  },
 ];
 
 const ALLERGY_OPTIONS = [
-  { value: "penicillin", label: "Penicillin" },
-  { value: "sulfa", label: "Sulfa Drugs" },
-  { value: "aspirin", label: "Aspirin" },
-  { value: "ibuprofen", label: "Ibuprofen" },
-  { value: "latex", label: "Latex" },
-  { value: "shellfish", label: "Shellfish" },
-  { value: "peanuts", label: "Peanuts" },
-  { value: "eggs", label: "Eggs" },
+  {
+    value: "penicillin",
+    label: "Penicillin",
+    IconComponent: PillIcon,
+    color: "#3b82f6",
+  },
+  {
+    value: "sulfa",
+    label: "Sulfa Drugs",
+    IconComponent: MedicationIcon,
+    color: "#6366f1",
+  },
+  {
+    value: "aspirin",
+    label: "Aspirin",
+    IconComponent: PillIcon,
+    color: "#ef4444",
+  },
+  {
+    value: "ibuprofen",
+    label: "Ibuprofen",
+    IconComponent: PillIcon,
+    color: "#f97316",
+  },
+  {
+    value: "latex",
+    label: "Latex",
+    IconComponent: WarningIcon,
+    color: "#eab308",
+  },
+  {
+    value: "shellfish",
+    label: "Shellfish",
+    IconComponent: WarningIcon,
+    color: "#f43f5e",
+  },
+  {
+    value: "peanuts",
+    label: "Peanuts",
+    IconComponent: WarningIcon,
+    color: "#d97706",
+  },
+  {
+    value: "eggs",
+    label: "Eggs",
+    IconComponent: WarningIcon,
+    color: "#fbbf24",
+  },
 ];
 
 const FAMILY_HISTORY_OPTIONS = [
-  { value: "heart_disease", label: "Heart Disease" },
-  { value: "diabetes", label: "Diabetes" },
-  { value: "cancer", label: "Cancer" },
-  { value: "stroke", label: "Stroke" },
-  { value: "hypertension", label: "Hypertension" },
-  { value: "mental_illness", label: "Mental Illness" },
+  {
+    value: "heart_disease",
+    label: "Heart Disease",
+    IconComponent: HeartIcon,
+    color: "#e11d48",
+  },
+  {
+    value: "diabetes",
+    label: "Diabetes",
+    IconComponent: DropletsIcon,
+    color: "#ef4444",
+  },
+  {
+    value: "cancer",
+    label: "Cancer",
+    IconComponent: TargetIcon,
+    color: "#ec4899",
+  },
+  {
+    value: "stroke",
+    label: "Stroke",
+    IconComponent: BrainIcon,
+    color: "#8b5cf6",
+  },
+  {
+    value: "hypertension",
+    label: "Hypertension",
+    IconComponent: HeartPulseIcon,
+    color: "#dc2626",
+  },
+  {
+    value: "mental_illness",
+    label: "Mental Illness",
+    IconComponent: BrainIcon,
+    color: "#a855f7",
+  },
 ];
 
 export default function PatientIntakeForm({ onSubmitSuccess }) {
   const [formData, setFormData] = useState(initialFormState);
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ type: "", text: "" });
   const [showConsultationUpload, setShowConsultationUpload] = useState(false);
   const [showVoiceDictation, setShowVoiceDictation] = useState(false);
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  const [showNaturalLanguage, setShowNaturalLanguage] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageModal, setMessageModal] = useState({ type: "", text: "" });
+  const [patientCredentials, setPatientCredentials] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Auto-save to localStorage
+  useEffect(() => {
+    const savedData = localStorage.getItem("patientIntakeFormDraft");
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        setFormData(parsed);
+      } catch (e) {
+        console.error("Error loading saved form data:", e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const hasData = Object.values(formData).some((v) => {
+      if (typeof v === "string") return v.length > 0;
+      if (Array.isArray(v)) return v.length > 0;
+      if (typeof v === "object")
+        return Object.values(v).some((sv) => sv && sv.length > 0);
+      return false;
+    });
+    if (hasData) {
+      localStorage.setItem("patientIntakeFormDraft", JSON.stringify(formData));
+    }
+  }, [formData]);
+
+  // Show message in modal
+  const showMessage = (type, text) => {
+    setMessageModal({ type, text });
+    setShowMessageModal(true);
+  };
+
+  // Validation
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim())
+      newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.dateOfBirth)
+      newErrors.dateOfBirth = "Date of birth is required";
+    if (!formData.primaryComplaint.condition)
+      newErrors.condition = "Please select a primary concern";
+
+    // Validate current medications - if any medication is added, it must have at least a drug name
+    const invalidMedications = formData.currentMedications.filter(
+      (med, index) => !med.drugName.trim()
+    );
+    if (invalidMedications.length > 0) {
+      newErrors.medications =
+        "Please fill in the drug name for all medications or remove empty entries";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   // Handle extracted data from consultation upload
   const handleConsultationDataExtracted = (extractedData) => {
@@ -90,7 +299,6 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
     console.log(JSON.stringify(extractedData, null, 2));
     console.log("===============================");
 
-    // Map extracted data to form structure
     setFormData((prev) => {
       const newFormData = { ...prev };
 
@@ -100,44 +308,26 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       if (extractedData.lastName) newFormData.lastName = extractedData.lastName;
       if (extractedData.dateOfBirth)
         newFormData.dateOfBirth = extractedData.dateOfBirth;
-      if (extractedData.gender) newFormData.gender = extractedData.gender;
+      if (extractedData.gender) {
+        const mappedGender = mapGender(extractedData.gender);
+        if (mappedGender) newFormData.gender = mappedGender;
+      }
 
       // Medical History
       if (extractedData.medicalHistory) {
         const mh = extractedData.medicalHistory;
-
-        console.log("[MEDICAL HISTORY DEBUG] Raw medicalHistory:", mh);
-        console.log(
-          "[MEDICAL HISTORY DEBUG] Family history array:",
-          mh.familyHistory
-        );
-
-        // Map conditions to form values
         const mappedConditions =
           mh.conditions
             ?.map((c) => mapConditionToFormValue(c))
             .filter((c) => c !== null) || [];
-
-        // Map allergies to form values
         const mappedAllergies =
           mh.allergies
             ?.map((a) => mapAllergyToFormValue(a))
             .filter((a) => a !== null) || [];
-
-        // Map family history to form values
         const mappedFamilyHistory =
           mh.familyHistory
-            ?.map((f) => {
-              const mapped = mapFamilyHistoryToFormValue(f);
-              console.log("[FAMILY HISTORY DEBUG] Mapping:", f, "->", mapped);
-              return mapped;
-            })
+            ?.map((f) => mapFamilyHistoryToFormValue(f))
             .filter((f) => f !== null) || [];
-
-        console.log(
-          "[FAMILY HISTORY DEBUG] Final mapped array:",
-          mappedFamilyHistory
-        );
 
         newFormData.medicalHistory = {
           ...prev.medicalHistory,
@@ -167,14 +357,9 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
               ? mh.familyHistory.join(", ")
               : prev.medicalHistory.familyHistoryOther,
         };
-
-        console.log(
-          "[MEDICAL HISTORY DEBUG] Final familyHistory in form:",
-          newFormData.medicalHistory.familyHistory
-        );
       }
 
-      // Current Medications - handle both array formats
+      // Current Medications
       const medications = extractedData.currentMedications || [];
       if (medications.length > 0) {
         newFormData.currentMedications = medications.map((med) => ({
@@ -184,156 +369,105 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
         }));
       }
 
-      // Health Metrics - handle both nested and flat structures
+      // Health Metrics
       const healthMetrics = extractedData.healthMetrics || extractedData;
-
-      // Update age
       if (healthMetrics.age || extractedData.age) {
         newFormData.healthMetrics.age = extractNumericValue(
           healthMetrics.age || extractedData.age
         );
       }
-
-      // Update weight
       if (healthMetrics.weight || extractedData.weight) {
         newFormData.healthMetrics.weight = extractNumericValue(
           healthMetrics.weight || extractedData.weight
         );
       }
-
-      // Update height
       if (healthMetrics.height || extractedData.height) {
         newFormData.healthMetrics.height = extractNumericValue(
           healthMetrics.height || extractedData.height
         );
       }
-
-      // Update blood pressure
       const bp = healthMetrics.bloodPressure || extractedData.bloodPressure;
       if (bp) {
-        console.log("[BP DEBUG] Blood pressure value:", bp, "Type:", typeof bp);
-
-        // Handle object format: { systolic: 120, diastolic: 80 }
         if (typeof bp === "object" && bp.systolic && bp.diastolic) {
           newFormData.healthMetrics.bloodPressure = {
             systolic: String(bp.systolic),
             diastolic: String(bp.diastolic),
           };
-          console.log(
-            "[BP DEBUG] Used object format:",
-            newFormData.healthMetrics.bloodPressure
-          );
-        }
-        // Handle string format: "120/80"
-        else {
+        } else {
           const parsed = parseBP(String(bp));
-          if (parsed && parsed.systolic) {
+          if (parsed && parsed.systolic)
             newFormData.healthMetrics.bloodPressure = parsed;
-            console.log("[BP DEBUG] Parsed string format:", parsed);
-          }
         }
       }
-
-      // Update heart rate
       if (healthMetrics.heartRate || extractedData.heartRate) {
         newFormData.healthMetrics.heartRate = extractNumericValue(
           healthMetrics.heartRate || extractedData.heartRate
         );
       }
-
-      // Update blood glucose
       if (healthMetrics.bloodGlucose || extractedData.bloodGlucose) {
         newFormData.healthMetrics.bloodGlucose = String(
           healthMetrics.bloodGlucose || extractedData.bloodGlucose
         ).trim();
       }
 
-      // Lifestyle - handle both nested and flat structures
+      // Lifestyle
       const lifestyle = extractedData.lifestyle || extractedData;
-
       if (lifestyle.smokingStatus || extractedData.smokingStatus) {
         const status = mapSmokingStatus(
           lifestyle.smokingStatus || extractedData.smokingStatus
         );
         if (status) newFormData.lifestyle.smokingStatus = status;
       }
-
       if (lifestyle.alcoholConsumption || extractedData.alcoholConsumption) {
         const alcohol = mapAlcoholConsumption(
           lifestyle.alcoholConsumption || extractedData.alcoholConsumption
         );
         if (alcohol) newFormData.lifestyle.alcoholConsumption = alcohol;
       }
-
       if (lifestyle.exerciseFrequency || extractedData.exerciseFrequency) {
         const exercise = mapExerciseFrequency(
           lifestyle.exerciseFrequency || extractedData.exerciseFrequency
         );
         if (exercise) newFormData.lifestyle.exerciseFrequency = exercise;
       }
-
       if (lifestyle.dietType || extractedData.dietType) {
-        const dietValue = lifestyle.dietType || extractedData.dietType;
-        console.log("[DIET DEBUG] Diet type value:", dietValue);
-        newFormData.lifestyle.dietType = dietValue;
+        newFormData.lifestyle.dietType =
+          lifestyle.dietType || extractedData.dietType;
       }
 
-      // Primary Complaint - handle both nested and flat structures
+      // Primary Complaint
       const primaryComplaint = extractedData.primaryComplaint || {};
-
-      console.log("[PRIMARY COMPLAINT DEBUG] Raw data:", primaryComplaint);
-
       if (primaryComplaint.condition) {
-        console.log(
-          "[PRIMARY COMPLAINT DEBUG] Setting condition:",
-          primaryComplaint.condition
-        );
-        newFormData.primaryComplaint.condition = primaryComplaint.condition;
+        const mappedCondition = mapPrimaryCondition(primaryComplaint.condition);
+        if (mappedCondition) {
+          newFormData.primaryComplaint.condition = mappedCondition;
+        }
       }
-
-      if (primaryComplaint.description) {
-        console.log(
-          "[PRIMARY COMPLAINT DEBUG] Setting description:",
-          primaryComplaint.description
-        );
+      if (primaryComplaint.description)
         newFormData.primaryComplaint.description = primaryComplaint.description;
-      }
-
-      if (primaryComplaint.duration) {
-        console.log(
-          "[PRIMARY COMPLAINT DEBUG] Setting duration:",
-          primaryComplaint.duration
-        );
+      if (primaryComplaint.duration)
         newFormData.primaryComplaint.duration = primaryComplaint.duration;
-      }
-
       if (primaryComplaint.severity) {
         const severity = mapSeverity(primaryComplaint.severity);
-        console.log(
-          "[PRIMARY COMPLAINT DEBUG] Severity input:",
-          primaryComplaint.severity,
-          "Mapped:",
-          severity
-        );
         if (severity) newFormData.primaryComplaint.severity = severity;
       }
 
       return newFormData;
     });
 
-    // Close the upload modal and show success message
+    // Close modals and show success
     setShowConsultationUpload(false);
     setShowDocumentUpload(false);
-    setMessage({
-      type: "success",
-      text: "Patient data extracted from consultation! Please review and make any necessary corrections.",
-    });
+    setShowVoiceDictation(false);
+    showMessage(
+      "success",
+      "Patient data extracted successfully! Please review and make any necessary corrections."
+    );
   };
 
-  // Helper function to map extracted condition names to form values
+  // Helper functions for mapping
   const mapConditionToFormValue = (conditionName) => {
     if (!conditionName) return null;
-
     const lower = conditionName.toLowerCase().trim();
     const mapping = {
       diabetes: "diabetes",
@@ -351,14 +485,11 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       hyperlipidemia: "hyperlipidemia",
       cholesterol: "hyperlipidemia",
     };
-
     return mapping[lower] || null;
   };
 
-  // Helper function to map extracted allergy names to form values
   const mapAllergyToFormValue = (allergyName) => {
     if (!allergyName) return null;
-
     const lower = allergyName.toLowerCase().trim();
     const mapping = {
       penicillin: "penicillin",
@@ -371,14 +502,11 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       peanuts: "peanuts",
       eggs: "eggs",
     };
-
     return mapping[lower] || null;
   };
 
-  // Helper function to map extracted family history to form values
   const mapFamilyHistoryToFormValue = (historyName) => {
     if (!historyName) return null;
-
     const lower = historyName.toLowerCase().trim();
     const mapping = {
       "heart disease": "heart_disease",
@@ -390,22 +518,18 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       "mental illness": "mental_illness",
       "mental health": "mental_illness",
     };
-
     return mapping[lower] || null;
   };
 
   const parseBP = (bpString) => {
     if (!bpString) return { systolic: "", diastolic: "" };
     const match = bpString.match(/(\d+)\s*[\/\-]\s*(\d+)/);
-    if (match) {
-      return { systolic: match[1], diastolic: match[2] };
-    }
+    if (match) return { systolic: match[1], diastolic: match[2] };
     return { systolic: "", diastolic: "" };
   };
 
   const extractNumericValue = (value) => {
     if (!value) return "";
-    // Extract number (including decimals) from string like "64 kg" or "182 cm"
     const match = String(value).match(/(\d+\.?\d*)/);
     return match ? match[1] : "";
   };
@@ -476,6 +600,43 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
     return null;
   };
 
+  const mapGender = (gender) => {
+    if (!gender) return null;
+    const lower = gender.toLowerCase().trim();
+    if (lower === "male" || lower === "m") return "male";
+    if (lower === "female" || lower === "f") return "female";
+    if (lower === "other" || lower === "non-binary" || lower === "nonbinary")
+      return "other";
+    return null;
+  };
+
+  const mapPrimaryCondition = (condition) => {
+    if (!condition) return null;
+    const lower = condition.toLowerCase().trim();
+    const mapping = {
+      "erectile dysfunction": "erectile_dysfunction",
+      erectile_dysfunction: "erectile_dysfunction",
+      ed: "erectile_dysfunction",
+      impotence: "erectile_dysfunction",
+      "hair loss": "hair_loss",
+      hair_loss: "hair_loss",
+      alopecia: "hair_loss",
+      baldness: "hair_loss",
+      "weight loss": "weight_loss",
+      weight_loss: "weight_loss",
+      obesity: "weight_loss",
+      overweight: "weight_loss",
+      anxiety: "anxiety",
+      "anxiety disorder": "anxiety",
+      stress: "anxiety",
+      insomnia: "insomnia",
+      "sleep disorder": "insomnia",
+      "sleep problems": "insomnia",
+      "difficulty sleeping": "insomnia",
+    };
+    return mapping[lower] || "other";
+  };
+
   const mapSeverity = (severity) => {
     if (!severity) return null;
     if (typeof severity === "number") {
@@ -496,17 +657,18 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
     return null;
   };
 
+  // Form handlers
   const handleInputChange = (section, field, value) => {
     if (section) {
       setFormData((prev) => ({
         ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: value,
-        },
+        [section]: { ...prev[section], [field]: value },
       }));
     } else {
       setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+    if (errors[field]) {
+      setErrors((prev) => ({ ...prev, [field]: null }));
     }
   };
 
@@ -515,10 +677,7 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       ...prev,
       [section]: {
         ...prev[section],
-        [parent]: {
-          ...prev[section][parent],
-          [field]: value,
-        },
+        [parent]: { ...prev[section][parent], [field]: value },
       },
     }));
   };
@@ -526,24 +685,20 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
   const handleCheckboxChange = (section, field, value, checked) => {
     setFormData((prev) => {
       const currentArray = prev[section][field];
-      if (checked) {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: [...currentArray, value],
-          },
-        };
-      } else {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: currentArray.filter((item) => item !== value),
-          },
-        };
-      }
+      return {
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: checked
+            ? [...currentArray, value]
+            : currentArray.filter((item) => item !== value),
+        },
+      };
     });
+  };
+
+  const handleBlur = (field) => {
+    setTouched((prev) => ({ ...prev, [field]: true }));
   };
 
   const addMedication = () => {
@@ -561,6 +716,10 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
       ...prev,
       currentMedications: prev.currentMedications.filter((_, i) => i !== index),
     }));
+    // Clear medication error when removing
+    if (errors.medications) {
+      setErrors((prev) => ({ ...prev, medications: null }));
+    }
   };
 
   const updateMedication = (index, field, value) => {
@@ -570,6 +729,10 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
         i === index ? { ...med, [field]: value } : med
       ),
     }));
+    // Clear medication error when updating drug name
+    if (field === "drugName" && errors.medications) {
+      setErrors((prev) => ({ ...prev, medications: null }));
+    }
   };
 
   const calculateAge = (dob) => {
@@ -591,20 +754,23 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
     setFormData((prev) => ({
       ...prev,
       dateOfBirth: value,
-      healthMetrics: {
-        ...prev.healthMetrics,
-        age: calculateAge(value),
-      },
+      healthMetrics: { ...prev.healthMetrics, age: calculateAge(value) },
     }));
+    if (errors.dateOfBirth) {
+      setErrors((prev) => ({ ...prev, dateOfBirth: null }));
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!validateForm()) {
+      showMessage("error", "Please fill in all required fields.");
+      return;
+    }
+
     setLoading(true);
-    setMessage({ type: "", text: "" });
 
     try {
-      // Parse "other" fields and merge with checkbox selections
       const parseOtherField = (value) =>
         value
           ? value
@@ -613,25 +779,19 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
               .filter((s) => s)
           : [];
 
-      // Merge conditions with other conditions
       const allConditions = [
         ...formData.medicalHistory.conditions,
         ...parseOtherField(formData.medicalHistory.conditionsOther),
       ];
-
-      // Merge allergies with other allergies
       const allAllergies = [
         ...formData.medicalHistory.allergies,
         ...parseOtherField(formData.medicalHistory.allergiesOther),
       ];
-
-      // Merge family history with other family history
       const allFamilyHistory = [
         ...formData.medicalHistory.familyHistory,
         ...parseOtherField(formData.medicalHistory.familyHistoryOther),
       ];
 
-      // Prepare data for submission
       const submitData = {
         ...formData,
         medicalHistory: {
@@ -642,77 +802,873 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
             ? formData.medicalHistory.surgeries.split(",").map((s) => s.trim())
             : [],
         },
-        lifestyle: {
-          ...formData.lifestyle,
-          // Keep otherFactors as a string for flexibility
-        },
+        lifestyle: { ...formData.lifestyle },
       };
 
       const response = await patientAPI.create(submitData);
-      setMessage({
-        type: "success",
-        text: "Patient intake submitted successfully!",
-      });
+
+      if (response.data.credentials) {
+        setPatientCredentials(response.data.credentials);
+        setShowCredentialsModal(true);
+      } else {
+        showMessage("success", "Patient intake submitted successfully!");
+      }
+
+      localStorage.removeItem("patientIntakeFormDraft");
       setFormData(initialFormState);
+
       if (onSubmitSuccess) {
-        onSubmitSuccess(response.data);
+        onSubmitSuccess(response.data.patient || response.data);
       }
     } catch (error) {
-      setMessage({
-        type: "error",
-        text:
-          error.response?.data?.message ||
-          "Failed to submit intake form. Please try again.",
-      });
+      showMessage(
+        "error",
+        error.response?.data?.message ||
+          "Failed to submit intake form. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <form className="intake-form" onSubmit={handleSubmit}>
-      <h1>🏥 Patient Intake Form</h1>
-      <p className="subtitle">AI-Powered Clinical Assistant</p>
+  const clearDraft = () => {
+    setShowConfirmModal(true);
+  };
 
-      {/* Consultation Upload Button */}
-      <div className="consultation-upload-trigger">
-        <button
-          type="button"
-          className="upload-consultation-btn"
-          onClick={() => setShowConsultationUpload(true)}
+  const confirmClearDraft = () => {
+    localStorage.removeItem("patientIntakeFormDraft");
+    setFormData(initialFormState);
+    setErrors({});
+    setShowConfirmModal(false);
+    showMessage("success", "Form has been cleared successfully.");
+  };
+
+  return (
+    <div className="intake-form-wrapper">
+      <form className="intake-form" onSubmit={handleSubmit}>
+        {/* Page Header */}
+        <div className="intake-page-header">
+          <div className="header-title-section">
+            <ClipboardIcon size={28} />
+            <div>
+              <h1>Patient Intake Form</h1>
+              <p>Complete patient information for treatment planning</p>
+            </div>
+          </div>
+          <div className="header-ai-tools">
+            <div className="ai-tools-badge">
+              <AIIcon size={14} />
+              <span>AI-Powered Tools</span>
+            </div>
+            <div className="ai-tools-buttons">
+              <button
+                type="button"
+                className="ai-tool-btn text"
+                onClick={() => setShowNaturalLanguage(true)}
+                title="Natural Language Input"
+              >
+                <ScrollTextIcon size={18} />
+                <span>Text</span>
+              </button>
+              <button
+                type="button"
+                className="ai-tool-btn"
+                onClick={() => setShowConsultationUpload(true)}
+                title="Upload Recording"
+              >
+                <FolderIcon size={18} />
+                <span>Recording</span>
+              </button>
+              <button
+                type="button"
+                className="ai-tool-btn voice"
+                onClick={() => setShowVoiceDictation(true)}
+                title="Voice Dictation"
+              >
+                <MicIcon size={18} />
+                <span>Dictate</span>
+              </button>
+              <button
+                type="button"
+                className="ai-tool-btn document"
+                onClick={() => setShowDocumentUpload(true)}
+                title="Upload Document"
+              >
+                <DocumentIcon size={18} />
+                <span>Document</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <div className="intake-form-content">
+          {/* Section: Basic Information */}
+          <section className="form-section">
+            <div className="section-header">
+              <ClipboardIcon size={20} />
+              <h2>Basic Information</h2>
+            </div>
+            <div className="form-grid">
+              <div
+                className={`form-field ${
+                  errors.firstName && touched.firstName ? "error" : ""
+                }`}
+              >
+                <label htmlFor="firstName">
+                  First Name <span className="required">*</span>
+                </label>
+                <input
+                  id="firstName"
+                  type="text"
+                  placeholder="Enter first name"
+                  value={formData.firstName}
+                  onChange={(e) =>
+                    handleInputChange(null, "firstName", e.target.value)
+                  }
+                  onBlur={() => handleBlur("firstName")}
+                />
+                {errors.firstName && touched.firstName && (
+                  <span className="field-error">{errors.firstName}</span>
+                )}
+              </div>
+
+              <div
+                className={`form-field ${
+                  errors.lastName && touched.lastName ? "error" : ""
+                }`}
+              >
+                <label htmlFor="lastName">
+                  Last Name <span className="required">*</span>
+                </label>
+                <input
+                  id="lastName"
+                  type="text"
+                  placeholder="Enter last name"
+                  value={formData.lastName}
+                  onChange={(e) =>
+                    handleInputChange(null, "lastName", e.target.value)
+                  }
+                  onBlur={() => handleBlur("lastName")}
+                />
+                {errors.lastName && touched.lastName && (
+                  <span className="field-error">{errors.lastName}</span>
+                )}
+              </div>
+
+              <div
+                className={`form-field ${
+                  errors.dateOfBirth && touched.dateOfBirth ? "error" : ""
+                }`}
+              >
+                <label htmlFor="dateOfBirth">
+                  Date of Birth <span className="required">*</span>
+                </label>
+                <input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth}
+                  onChange={(e) => handleDateOfBirthChange(e.target.value)}
+                  onBlur={() => handleBlur("dateOfBirth")}
+                />
+                {errors.dateOfBirth && touched.dateOfBirth && (
+                  <span className="field-error">{errors.dateOfBirth}</span>
+                )}
+                {formData.dateOfBirth && (
+                  <span className="field-hint">
+                    Age: {calculateAge(formData.dateOfBirth)} years
+                  </span>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label>Gender</label>
+                <div className="gender-options">
+                  {["male", "female", "other"].map((g) => (
+                    <button
+                      key={g}
+                      type="button"
+                      className={`gender-option ${
+                        formData.gender === g ? "selected" : ""
+                      }`}
+                      onClick={() => handleInputChange(null, "gender", g)}
+                    >
+                      {g.charAt(0).toUpperCase() + g.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Primary Complaint */}
+          <section className="form-section">
+            <div className="section-header">
+              <TargetIcon size={20} />
+              <h2>Primary Complaint</h2>
+            </div>
+            <div className="form-grid">
+              <div className={`form-field ${errors.condition ? "error" : ""}`}>
+                <label>
+                  Primary Concern <span className="required">*</span>
+                </label>
+                <select
+                  value={formData.primaryComplaint.condition}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "primaryComplaint",
+                      "condition",
+                      e.target.value
+                    )
+                  }
+                >
+                  <option value="">Select primary concern...</option>
+                  <option value="erectile_dysfunction">
+                    Erectile Dysfunction
+                  </option>
+                  <option value="hair_loss">Hair Loss</option>
+                  <option value="weight_loss">Weight Loss</option>
+                  <option value="anxiety">Anxiety</option>
+                  <option value="insomnia">Insomnia</option>
+                  <option value="other">Other</option>
+                </select>
+                {errors.condition && (
+                  <span className="field-error">{errors.condition}</span>
+                )}
+              </div>
+
+              <div className="form-field">
+                <label>Duration</label>
+                <input
+                  type="text"
+                  placeholder="e.g., 6 months, 2 years"
+                  value={formData.primaryComplaint.duration}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "primaryComplaint",
+                      "duration",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div className="form-field">
+                <label>Severity</label>
+                <div className="severity-options">
+                  {["mild", "moderate", "severe"].map((sev) => (
+                    <button
+                      key={sev}
+                      type="button"
+                      className={`severity-btn ${sev} ${
+                        formData.primaryComplaint.severity === sev
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleInputChange("primaryComplaint", "severity", sev)
+                      }
+                    >
+                      {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-field full-width">
+                <label>Describe Symptoms</label>
+                <textarea
+                  placeholder="Please describe the symptoms in detail..."
+                  value={formData.primaryComplaint.description}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "primaryComplaint",
+                      "description",
+                      e.target.value
+                    )
+                  }
+                  rows={3}
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Medical History */}
+          <section className="form-section">
+            <div className="section-header">
+              <FolderIcon size={20} />
+              <h2>Medical History</h2>
+            </div>
+
+            <div className="subsection">
+              <h3>Existing Conditions</h3>
+              <div className="checkbox-grid">
+                {CONDITIONS_OPTIONS.map((option) => {
+                  const IconComp = option.IconComponent;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`checkbox-card ${
+                        formData.medicalHistory.conditions.includes(
+                          option.value
+                        )
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.medicalHistory.conditions.includes(
+                          option.value
+                        )}
+                        onChange={(e) =>
+                          handleCheckboxChange(
+                            "medicalHistory",
+                            "conditions",
+                            option.value,
+                            e.target.checked
+                          )
+                        }
+                      />
+                      <span
+                        className="checkbox-icon"
+                        style={{ color: option.color }}
+                      >
+                        <IconComp size={18} />
+                      </span>
+                      <span className="checkbox-label">{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                className="other-input"
+                placeholder="Other conditions (comma-separated)"
+                value={formData.medicalHistory.conditionsOther}
+                onChange={(e) =>
+                  handleInputChange(
+                    "medicalHistory",
+                    "conditionsOther",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="subsection">
+              <h3>Known Allergies</h3>
+              <div className="checkbox-grid">
+                {ALLERGY_OPTIONS.map((option) => {
+                  const IconComp = option.IconComponent;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`checkbox-card allergy ${
+                        formData.medicalHistory.allergies.includes(option.value)
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.medicalHistory.allergies.includes(
+                          option.value
+                        )}
+                        onChange={(e) =>
+                          handleCheckboxChange(
+                            "medicalHistory",
+                            "allergies",
+                            option.value,
+                            e.target.checked
+                          )
+                        }
+                      />
+                      <span
+                        className="checkbox-icon"
+                        style={{ color: option.color }}
+                      >
+                        <IconComp size={18} />
+                      </span>
+                      <span className="checkbox-label">{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                className="other-input"
+                placeholder="Other allergies (comma-separated)"
+                value={formData.medicalHistory.allergiesOther}
+                onChange={(e) =>
+                  handleInputChange(
+                    "medicalHistory",
+                    "allergiesOther",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="subsection">
+              <h3>Family History</h3>
+              <div className="checkbox-grid">
+                {FAMILY_HISTORY_OPTIONS.map((option) => {
+                  const IconComp = option.IconComponent;
+                  return (
+                    <label
+                      key={option.value}
+                      className={`checkbox-card ${
+                        formData.medicalHistory.familyHistory.includes(
+                          option.value
+                        )
+                          ? "selected"
+                          : ""
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.medicalHistory.familyHistory.includes(
+                          option.value
+                        )}
+                        onChange={(e) =>
+                          handleCheckboxChange(
+                            "medicalHistory",
+                            "familyHistory",
+                            option.value,
+                            e.target.checked
+                          )
+                        }
+                      />
+                      <span
+                        className="checkbox-icon"
+                        style={{ color: option.color }}
+                      >
+                        <IconComp size={18} />
+                      </span>
+                      <span className="checkbox-label">{option.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              <input
+                type="text"
+                className="other-input"
+                placeholder="Other family history (comma-separated)"
+                value={formData.medicalHistory.familyHistoryOther}
+                onChange={(e) =>
+                  handleInputChange(
+                    "medicalHistory",
+                    "familyHistoryOther",
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <div className="subsection">
+              <h3>Previous Surgeries</h3>
+              <div className="form-field">
+                <input
+                  type="text"
+                  placeholder="e.g., Appendectomy 2015, Knee surgery 2020 (comma-separated)"
+                  value={formData.medicalHistory.surgeries}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "medicalHistory",
+                      "surgeries",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Section: Current Medications */}
+          <section
+            className={`form-section ${errors.medications ? "has-error" : ""}`}
+          >
+            <div className="section-header">
+              <MedicationIcon size={20} />
+              <h2>Current Medications</h2>
+              <button
+                type="button"
+                className="btn-add-inline"
+                onClick={addMedication}
+              >
+                <PlusIcon size={16} /> Add
+              </button>
+            </div>
+            {errors.medications && (
+              <div className="section-error">
+                <WarningIcon size={16} />
+                <span>{errors.medications}</span>
+              </div>
+            )}
+            {formData.currentMedications.length === 0 ? (
+              <p className="empty-hint">
+                No medications added. Click "Add" to add medications.
+              </p>
+            ) : (
+              <div className="medication-list">
+                {formData.currentMedications.map((med, index) => (
+                  <div
+                    key={index}
+                    className={`medication-row ${
+                      errors.medications && !med.drugName.trim() ? "error" : ""
+                    }`}
+                  >
+                    <div className="medication-drug-field">
+                      <DrugAutocomplete
+                        value={med.drugName}
+                        onChange={(value) =>
+                          updateMedication(index, "drugName", value)
+                        }
+                        onSelect={(drug) => {
+                          updateMedication(
+                            index,
+                            "drugName",
+                            `${drug.genericName}${
+                              drug.brandName ? ` (${drug.brandName})` : ""
+                            }`
+                          );
+                          if (drug.strength && !med.dosage) {
+                            updateMedication(index, "dosage", drug.strength);
+                          }
+                        }}
+                        placeholder="Search medication..."
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Dosage"
+                      value={med.dosage}
+                      onChange={(e) =>
+                        updateMedication(index, "dosage", e.target.value)
+                      }
+                    />
+                    <input
+                      type="text"
+                      placeholder="Frequency"
+                      value={med.frequency}
+                      onChange={(e) =>
+                        updateMedication(index, "frequency", e.target.value)
+                      }
+                    />
+                    <button
+                      type="button"
+                      className="btn-remove-inline"
+                      onClick={() => removeMedication(index)}
+                    >
+                      <TrashIcon size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Section: Health Metrics */}
+          <section className="form-section">
+            <div className="section-header">
+              <ChartIcon size={20} />
+              <h2>Health Metrics</h2>
+            </div>
+            <div className="metrics-row">
+              <div className="metric-field">
+                <label>Height (cm)</label>
+                <input
+                  type="number"
+                  placeholder="180"
+                  value={formData.healthMetrics.height}
+                  onChange={(e) =>
+                    handleInputChange("healthMetrics", "height", e.target.value)
+                  }
+                />
+              </div>
+              <div className="metric-field">
+                <label>Weight (kg)</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  placeholder="75"
+                  value={formData.healthMetrics.weight}
+                  onChange={(e) =>
+                    handleInputChange("healthMetrics", "weight", e.target.value)
+                  }
+                />
+              </div>
+              <div className="metric-field bp-field">
+                <label>Blood Pressure</label>
+                <div className="bp-inputs">
+                  <input
+                    type="number"
+                    placeholder="120"
+                    value={formData.healthMetrics.bloodPressure.systolic}
+                    onChange={(e) =>
+                      handleNestedChange(
+                        "healthMetrics",
+                        "bloodPressure",
+                        "systolic",
+                        e.target.value
+                      )
+                    }
+                  />
+                  <span>/</span>
+                  <input
+                    type="number"
+                    placeholder="80"
+                    value={formData.healthMetrics.bloodPressure.diastolic}
+                    onChange={(e) =>
+                      handleNestedChange(
+                        "healthMetrics",
+                        "bloodPressure",
+                        "diastolic",
+                        e.target.value
+                      )
+                    }
+                  />
+                </div>
+              </div>
+              <div className="metric-field">
+                <label>Heart Rate (bpm)</label>
+                <input
+                  type="number"
+                  placeholder="72"
+                  value={formData.healthMetrics.heartRate}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "healthMetrics",
+                      "heartRate",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+              <div className="metric-field">
+                <label>Blood Glucose (mg/dL)</label>
+                <input
+                  type="number"
+                  placeholder="100"
+                  value={formData.healthMetrics.bloodGlucose}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "healthMetrics",
+                      "bloodGlucose",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+              {formData.healthMetrics.weight &&
+                formData.healthMetrics.height && (
+                  <div className="metric-field calculated">
+                    <label>BMI</label>
+                    <div className="bmi-value">
+                      {(
+                        formData.healthMetrics.weight /
+                        Math.pow(formData.healthMetrics.height / 100, 2)
+                      ).toFixed(1)}
+                    </div>
+                  </div>
+                )}
+            </div>
+          </section>
+
+          {/* Section: Lifestyle */}
+          <section className="form-section">
+            <div className="section-header">
+              <ExerciseIcon size={20} />
+              <h2>Lifestyle</h2>
+            </div>
+            <div className="lifestyle-row">
+              <div className="lifestyle-field">
+                <label>Smoking</label>
+                <div className="option-buttons">
+                  {[
+                    { value: "never", label: "Never" },
+                    { value: "former", label: "Former" },
+                    { value: "current", label: "Current" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`option-btn ${
+                        formData.lifestyle.smokingStatus === opt.value
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleInputChange(
+                          "lifestyle",
+                          "smokingStatus",
+                          opt.value
+                        )
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="lifestyle-field">
+                <label>Alcohol</label>
+                <div className="option-buttons">
+                  {[
+                    { value: "none", label: "None" },
+                    { value: "occasional", label: "Occasional" },
+                    { value: "moderate", label: "Moderate" },
+                    { value: "heavy", label: "Heavy" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`option-btn ${
+                        formData.lifestyle.alcoholConsumption === opt.value
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleInputChange(
+                          "lifestyle",
+                          "alcoholConsumption",
+                          opt.value
+                        )
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="lifestyle-field">
+                <label>Exercise</label>
+                <div className="option-buttons">
+                  {[
+                    { value: "sedentary", label: "Sedentary" },
+                    { value: "light", label: "Light" },
+                    { value: "moderate", label: "Moderate" },
+                    { value: "active", label: "Active" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`option-btn ${
+                        formData.lifestyle.exerciseFrequency === opt.value
+                          ? "selected"
+                          : ""
+                      }`}
+                      onClick={() =>
+                        handleInputChange(
+                          "lifestyle",
+                          "exerciseFrequency",
+                          opt.value
+                        )
+                      }
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="form-grid" style={{ marginTop: "1rem" }}>
+              <div className="form-field">
+                <label>Diet Type</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Vegetarian, Keto, No restrictions"
+                  value={formData.lifestyle.dietType}
+                  onChange={(e) =>
+                    handleInputChange("lifestyle", "dietType", e.target.value)
+                  }
+                />
+              </div>
+              <div className="form-field">
+                <label>Other Factors</label>
+                <input
+                  type="text"
+                  placeholder="e.g., Night shifts, High stress"
+                  value={formData.lifestyle.otherFactors}
+                  onChange={(e) =>
+                    handleInputChange(
+                      "lifestyle",
+                      "otherFactors",
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Footer Actions */}
+        <div className="intake-footer">
+          <button type="button" className="btn-clear" onClick={clearDraft}>
+            Clear Form
+          </button>
+          <button type="submit" className="btn-submit" disabled={loading}>
+            {loading ? (
+              <>
+                <ButtonLoader />
+                Submitting...
+              </>
+            ) : (
+              <>
+                <CheckIcon size={18} />
+                Submit Intake Form
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+
+      {/* Message Modal */}
+      {showMessageModal && (
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowMessageModal(false)}
         >
-          📁 Upload Recording
-        </button>
-        <button
-          type="button"
-          className="voice-dictation-btn"
-          onClick={() => setShowVoiceDictation(true)}
-        >
-          🎤 Live Voice Dictation
-        </button>
-        <button
-          type="button"
-          className="upload-document-btn"
-          onClick={() => setShowDocumentUpload(true)}
-        >
-          📄 Upload Document
-        </button>
-        <span className="upload-hint">
-          Upload recordings, documents, lab results, or use voice dictation to
-          auto-fill the form with AI
-        </span>
-      </div>
+          <div
+            className="intake-modal message-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={`message-modal-content ${messageModal.type}`}>
+              <div className="message-icon">
+                {messageModal.type === "success" ? (
+                  <SuccessIcon size={32} />
+                ) : (
+                  <ErrorIcon size={32} />
+                )}
+              </div>
+              <p>{messageModal.text}</p>
+              <button
+                type="button"
+                className="btn-modal-close"
+                onClick={() => setShowMessageModal(false)}
+              >
+                OK
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Consultation Upload Modal */}
       {showConsultationUpload && (
-        <div className="consultation-modal-overlay">
-          <div className="consultation-modal">
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowConsultationUpload(false)}
+        >
+          <div className="intake-modal" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              className="consultation-modal-close"
+              className="modal-close"
               onClick={() => setShowConsultationUpload(false)}
             >
-              ✕
+              <CloseIcon size={20} />
             </button>
             <ConsultationUpload
               onDataExtracted={handleConsultationDataExtracted}
@@ -724,14 +1680,17 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
 
       {/* Voice Dictation Modal */}
       {showVoiceDictation && (
-        <div className="consultation-modal-overlay">
-          <div className="consultation-modal">
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowVoiceDictation(false)}
+        >
+          <div className="intake-modal" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              className="consultation-modal-close"
+              className="modal-close"
               onClick={() => setShowVoiceDictation(false)}
             >
-              ✕
+              <CloseIcon size={20} />
             </button>
             <VoiceDictation
               onDataExtracted={handleConsultationDataExtracted}
@@ -743,14 +1702,17 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
 
       {/* Document Upload Modal */}
       {showDocumentUpload && (
-        <div className="consultation-modal-overlay">
-          <div className="consultation-modal">
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowDocumentUpload(false)}
+        >
+          <div className="intake-modal" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
-              className="consultation-modal-close"
+              className="modal-close"
               onClick={() => setShowDocumentUpload(false)}
             >
-              ✕
+              <CloseIcon size={20} />
             </button>
             <DocumentUpload
               onDataExtracted={handleConsultationDataExtracted}
@@ -760,665 +1722,167 @@ export default function PatientIntakeForm({ onSubmitSuccess }) {
         </div>
       )}
 
-      {message.text && (
-        <div className={`alert alert-${message.type}`}>{message.text}</div>
+      {/* Natural Language Input Modal */}
+      {showNaturalLanguage && (
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowNaturalLanguage(false)}
+        >
+          <div className="intake-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setShowNaturalLanguage(false)}
+            >
+              <CloseIcon size={20} />
+            </button>
+            <NaturalLanguageInput
+              onDataExtracted={handleConsultationDataExtracted}
+              onClose={() => setShowNaturalLanguage(false)}
+            />
+          </div>
+        </div>
       )}
 
-      {/* Basic Information */}
-      <div className="form-section">
-        <h2>📋 Basic Information</h2>
-        <div className="form-row">
-          <div className="form-group">
-            <label style={{ color: "black" }}>First Name *</label>
-            <input
-              type="text"
-              placeholder="e.g., John"
-              style={{
-                color: "black",
-                border: "2px solid black", // Adds a 2px solid red border
-              }}
-              value={formData.firstName}
-              onChange={(e) =>
-                handleInputChange(null, "firstName", e.target.value)
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Last Name *</label>
-            <input
-              type="text"
-              placeholder="e.g., Smith"
-              style={{
-                color: "black",
-                border: "2px solid black",
-              }}
-              value={formData.lastName}
-              onChange={(e) =>
-                handleInputChange(null, "lastName", e.target.value)
-              }
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Date of Birth *</label>
-            <input
-              style={{
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="date"
-              value={formData.dateOfBirth}
-              onChange={(e) => handleDateOfBirthChange(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Gender</label>
-            <select
-              className="label-input"
-              style={{
-                color: "black",
-                border: "2px solid black",
-              }}
-              value={formData.gender}
-              onChange={(e) =>
-                handleInputChange(null, "gender", e.target.value)
-              }
+      {/* Credentials Modal */}
+      {showCredentialsModal && patientCredentials && (
+        <div className="intake-modal-overlay">
+          <div className="intake-modal credentials-modal">
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => setShowCredentialsModal(false)}
             >
-              <option value="">Select...</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Medical History */}
-      <div className="form-section">
-        <h2>📁 Medical History</h2>
-
-        <div className="form-group">
-          <label style={{ color: "black" }}>Existing Conditions</label>
-          <div className="checkbox-group">
-            {CONDITIONS_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className="checkbox-item"
-                style={{ color: "black" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.medicalHistory.conditions.includes(
-                    option.value
-                  )}
-                  onChange={(e) =>
-                    handleCheckboxChange(
-                      "medicalHistory",
-                      "conditions",
-                      option.value,
-                      e.target.checked
-                    )
-                  }
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-          <div className="other-input-group" style={{ marginTop: "0.75rem" }}>
-            <label className="other-label">
-              Other conditions (comma-separated):
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., COPD, Epilepsy, Chronic kidney disease"
-              value={formData.medicalHistory.conditionsOther}
-              onChange={(e) =>
-                handleInputChange(
-                  "medicalHistory",
-                  "conditionsOther",
-                  e.target.value
-                )
-              }
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="form-group" style={{ marginTop: "1rem" }}>
-          <label style={{ color: "black" }}>Known Allergies</label>
-          <div className="checkbox-group">
-            {ALLERGY_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className="checkbox-item"
-                style={{ color: "black" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.medicalHistory.allergies.includes(
-                    option.value
-                  )}
-                  onChange={(e) =>
-                    handleCheckboxChange(
-                      "medicalHistory",
-                      "allergies",
-                      option.value,
-                      e.target.checked
-                    )
-                  }
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-          <div className="other-input-group" style={{ marginTop: "0.75rem" }}>
-            <label className="other-label">
-              Other allergies (comma-separated):
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., Codeine, Dairy, Gluten, Bee stings"
-              value={formData.medicalHistory.allergiesOther}
-              onChange={(e) =>
-                handleInputChange(
-                  "medicalHistory",
-                  "allergiesOther",
-                  e.target.value
-                )
-              }
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-            />
-          </div>
-        </div>
-
-        <div className="form-row" style={{ marginTop: "1rem" }}>
-          <div className="form-group">
-            <label style={{ color: "black" }}>
-              Previous Surgeries (comma-separated)
-            </label>
-            <input
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="text"
-              placeholder="e.g., Appendectomy 2015, Knee surgery 2020"
-              value={formData.medicalHistory.surgeries}
-              onChange={(e) =>
-                handleInputChange("medicalHistory", "surgeries", e.target.value)
-              }
-            />
-          </div>
-        </div>
-
-        <div className="form-group" style={{ marginTop: "1rem" }}>
-          <label style={{ color: "black" }}>Family History</label>
-          <div className="checkbox-group">
-            {FAMILY_HISTORY_OPTIONS.map((option) => (
-              <label
-                key={option.value}
-                className="checkbox-item"
-                style={{ color: "black" }}
-              >
-                <input
-                  type="checkbox"
-                  checked={formData.medicalHistory.familyHistory.includes(
-                    option.value
-                  )}
-                  onChange={(e) =>
-                    handleCheckboxChange(
-                      "medicalHistory",
-                      "familyHistory",
-                      option.value,
-                      e.target.checked
-                    )
-                  }
-                />
-                {option.label}
-              </label>
-            ))}
-          </div>
-          <div className="other-input-group" style={{ marginTop: "0.75rem" }}>
-            <label className="other-label">
-              Other family history (comma-separated):
-            </label>
-            <input
-              type="text"
-              placeholder="e.g., Alzheimer's, Kidney disease, Autoimmune disorders"
-              value={formData.medicalHistory.familyHistoryOther}
-              onChange={(e) =>
-                handleInputChange(
-                  "medicalHistory",
-                  "familyHistoryOther",
-                  e.target.value
-                )
-              }
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Current Medications */}
-      <div className="form-section">
-        <h2>💊 Current Medications</h2>
-        <div className="medication-list">
-          {formData.currentMedications.map((med, index) => (
-            <div key={index} className="medication-item">
-              <div className="form-group">
-                <label style={{ color: "black" }}>Drug Name</label>
-                <input
-                  style={{
-                    marginTop: "0.25rem",
-                    color: "black",
-                    border: "2px solid black",
-                  }}
-                  type="text"
-                  placeholder="e.g., Metformin"
-                  value={med.drugName}
-                  onChange={(e) =>
-                    updateMedication(index, "drugName", e.target.value)
-                  }
-                />
+              <CloseIcon size={20} />
+            </button>
+            <div className="credentials-content">
+              <div className="credentials-header">
+                <div className="credentials-success-icon">
+                  <SuccessIcon size={48} />
+                </div>
+                <h2>Patient Account Created!</h2>
+                <p>Please save these login credentials for the patient</p>
               </div>
-              <div className="form-group">
-                <label style={{ color: "black" }}>Dosage</label>
-                <input
-                  style={{
-                    marginTop: "0.25rem",
-                    color: "black",
-                    border: "2px solid black",
-                  }}
-                  type="text"
-                  placeholder="e.g., 500mg"
-                  value={med.dosage}
-                  onChange={(e) =>
-                    updateMedication(index, "dosage", e.target.value)
-                  }
-                />
+              <div className="credentials-box">
+                <div className="credential-item">
+                  <label>Email:</label>
+                  <div className="credential-value">
+                    <code>{patientCredentials.email}</code>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() =>
+                        navigator.clipboard.writeText(patientCredentials.email)
+                      }
+                      title="Copy"
+                    >
+                      <CopyIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="credential-item">
+                  <label>Username:</label>
+                  <div className="credential-value">
+                    <code>{patientCredentials.username}</code>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          patientCredentials.username
+                        )
+                      }
+                      title="Copy"
+                    >
+                      <CopyIcon size={16} />
+                    </button>
+                  </div>
+                </div>
+                <div className="credential-item">
+                  <label>Password:</label>
+                  <div className="credential-value">
+                    <code>{patientCredentials.password}</code>
+                    <button
+                      type="button"
+                      className="copy-btn"
+                      onClick={() =>
+                        navigator.clipboard.writeText(
+                          patientCredentials.password
+                        )
+                      }
+                      title="Copy"
+                    >
+                      <CopyIcon size={16} />
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div className="form-group">
-                <label style={{ color: "black" }}>Frequency</label>
-                <input
-                  style={{
-                    marginTop: "0.25rem",
-                    color: "black",
-                    border: "2px solid black",
-                  }}
-                  type="text"
-                  placeholder="e.g., twice daily"
-                  value={med.frequency}
-                  onChange={(e) =>
-                    updateMedication(index, "frequency", e.target.value)
-                  }
-                />
+              <div className="credentials-warning">
+                <div className="warning-header">
+                  <WarningIcon size={18} />
+                  <strong>Important:</strong>
+                </div>
+                <span>
+                  This password will not be shown again. Please ensure the
+                  patient saves these credentials securely.
+                </span>
               </div>
               <button
                 type="button"
-                className="btn btn-danger"
-                onClick={() => removeMedication(index)}
+                className="btn-submit full-width"
+                onClick={() => {
+                  setShowCredentialsModal(false);
+                  setPatientCredentials(null);
+                }}
               >
-                ✕
+                <CheckIcon size={18} />
+                I've Saved the Credentials
               </button>
             </div>
-          ))}
+          </div>
         </div>
-        <button type="button" className="btn btn-add" onClick={addMedication}>
-          + Add Medication
-        </button>
-      </div>
+      )}
 
-      {/* Health Metrics */}
-      <div className="form-section">
-        <h2>📊 Health Metrics</h2>
-        <div className="form-row">
-          <div className="form-group">
-            <label style={{ color: "black" }}>
-              Age{" "}
-              {formData.dateOfBirth && (
-                <span style={{ fontSize: "0.8rem", color: "#212323ff" }}>
-                  (auto-calculated)
-                </span>
-              )}
-            </label>
-            <input
-              type="number"
-              placeholder={
-                formData.dateOfBirth ? "Auto-calculated from DOB" : "e.g., 35"
-              }
-              value={formData.healthMetrics.age}
-              onChange={(e) =>
-                handleInputChange("healthMetrics", "age", e.target.value)
-              }
-              readOnly={formData.dateOfBirth !== ""}
-              style={
-                formData.dateOfBirth
-                  ? { backgroundColor: "#ffffffff", cursor: "not-allowed", color: "black", border: "2px solid black" }
-                  : {
-                      marginTop: "0.25rem",
-                      color: "black",
-                      border: "2px solid black",
-                    }
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Weight (kg)</label>
-            <input
-              placeholder="e.g., 75.5"
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="number"
-              step="0.1"
-              value={formData.healthMetrics.weight}
-              onChange={(e) =>
-                handleInputChange("healthMetrics", "weight", e.target.value)
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Height (cm)</label>
-            <input
-              placeholder="e.g., 180"
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="number"
-              value={formData.healthMetrics.height}
-              onChange={(e) =>
-                handleInputChange("healthMetrics", "height", e.target.value)
-              }
-            />
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label style={{ color: "black" }}>Blood Pressure</label>
-            <div className="blood-pressure-group">
-              <input
-                style={{
-                  marginTop: "0.25rem",
-                  color: "black",
-                  border: "2px solid black",
-                }}
-                type="number"
-                placeholder="e.g., 120"
-                value={formData.healthMetrics.bloodPressure.systolic}
-                onChange={(e) =>
-                  handleNestedChange(
-                    "healthMetrics",
-                    "bloodPressure",
-                    "systolic",
-                    e.target.value
-                  )
-                }
-              />
-              <span>/</span>
-              <input
-                style={{
-                  marginTop: "0.25rem",
-                  color: "black",
-                  border: "2px solid black",
-                }}
-                type="number"
-                placeholder="e.g., 80"
-                value={formData.healthMetrics.bloodPressure.diastolic}
-                onChange={(e) =>
-                  handleNestedChange(
-                    "healthMetrics",
-                    "bloodPressure",
-                    "diastolic",
-                    e.target.value
-                  )
-                }
-              />
-              <span>mmHg</span>
+      {/* Confirmation Modal */}
+      {showConfirmModal && (
+        <div
+          className="intake-modal-overlay"
+          onClick={() => setShowConfirmModal(false)}
+        >
+          <div
+            className="intake-modal confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confirm-modal-content">
+              <div className="confirm-icon">
+                <WarningIcon size={48} />
+              </div>
+              <h3>Clear Form Data?</h3>
+              <p>
+                Are you sure you want to clear all form data? This action cannot
+                be undone.
+              </p>
+              <div className="confirm-actions">
+                <button
+                  type="button"
+                  className="btn-cancel"
+                  onClick={() => setShowConfirmModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn-confirm-danger"
+                  onClick={confirmClearDraft}
+                >
+                  <TrashIcon size={16} />
+                  Clear Form
+                </button>
+              </div>
             </div>
           </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Heart Rate (bpm)</label>
-            <input
-              placeholder="e.g., 72"
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="number"
-              value={formData.healthMetrics.heartRate}
-              onChange={(e) =>
-                handleInputChange("healthMetrics", "heartRate", e.target.value)
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Blood Glucose (mg/dL)</label>
-            <input
-              placeholder="e.g., 100"
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="number"
-              value={formData.healthMetrics.bloodGlucose}
-              onChange={(e) =>
-                handleInputChange(
-                  "healthMetrics",
-                  "bloodGlucose",
-                  e.target.value
-                )
-              }
-            />
-          </div>
         </div>
-      </div>
-
-      {/* Lifestyle Factors */}
-      <div className="form-section">
-        <h2>🏃 Lifestyle Factors</h2>
-        <div className="form-row">
-          <div className="form-group">
-            <label style={{ color: "black" }}>Smoking Status</label>
-            <select
-              value={formData.lifestyle.smokingStatus}
-              onChange={(e) =>
-                handleInputChange("lifestyle", "smokingStatus", e.target.value)
-              }
-            >
-              <option value="never">Never Smoked</option>
-              <option value="former">Former Smoker</option>
-              <option value="current">Current Smoker</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Alcohol Consumption</label>
-            <select
-              value={formData.lifestyle.alcoholConsumption}
-              onChange={(e) =>
-                handleInputChange(
-                  "lifestyle",
-                  "alcoholConsumption",
-                  e.target.value
-                )
-              }
-            >
-              <option value="none">None</option>
-              <option value="occasional">Occasional</option>
-              <option value="moderate">Moderate</option>
-              <option value="heavy">Heavy</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Exercise Frequency</label>
-            <select
-              value={formData.lifestyle.exerciseFrequency}
-              onChange={(e) =>
-                handleInputChange(
-                  "lifestyle",
-                  "exerciseFrequency",
-                  e.target.value
-                )
-              }
-            >
-              <option value="sedentary">Sedentary</option>
-              <option value="light">Light (1-2 days/week)</option>
-              <option value="moderate">Moderate (3-4 days/week)</option>
-              <option value="active">Active (5-6 days/week)</option>
-              <option value="very_active">Very Active (Daily)</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Diet Type</label>
-            <input
-              placeholder="e.g., Vegetarian, Keto, Mediterranean, Vegan"
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="text"
-              value={formData.lifestyle.dietType}
-              onChange={(e) =>
-                handleInputChange("lifestyle", "dietType", e.target.value)
-              }
-            />
-          </div>
-        </div>
-        <div className="form-row" style={{ marginTop: "1rem" }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label style={{ color: "black" }}>Other Lifestyle Factors</label>
-            <textarea
-              placeholder="e.g., Works night shifts, High stress job, Travels frequently, Sleep apnea, Uses supplements..."
-              value={formData.lifestyle.otherFactors}
-              onChange={(e) =>
-                handleInputChange("lifestyle", "otherFactors", e.target.value)
-              }
-              rows={3}
-              style={{ width: "100%", resize: "vertical" }}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Primary Complaint */}
-      <div className="form-section">
-        <h2>🎯 Primary Complaint</h2>
-        <div className="form-row">
-          <div className="form-group">
-            <label style={{ color: "black" }}>Condition *</label>
-            <select
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              value={formData.primaryComplaint.condition}
-              onChange={(e) =>
-                handleInputChange(
-                  "primaryComplaint",
-                  "condition",
-                  e.target.value
-                )
-              }
-              required
-            >
-              <option value="">Select primary concern...</option>
-              <option value="erectile_dysfunction">Erectile Dysfunction</option>
-              <option value="hair_loss">Hair Loss</option>
-              <option value="weight_loss">Weight Loss</option>
-              <option value="anxiety">Anxiety</option>
-              <option value="insomnia">Insomnia</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Duration</label>
-            <input
-              style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
-              type="text"
-              placeholder="e.g., 6 months, 2 years"
-              value={formData.primaryComplaint.duration}
-              onChange={(e) =>
-                handleInputChange(
-                  "primaryComplaint",
-                  "duration",
-                  e.target.value
-                )
-              }
-            />
-          </div>
-          <div className="form-group">
-            <label style={{ color: "black" }}>Severity</label>
-            <select
-              value={formData.primaryComplaint.severity}
-              onChange={(e) =>
-                handleInputChange(
-                  "primaryComplaint",
-                  "severity",
-                  e.target.value
-                )
-              }
-            >
-              <option value="mild">Mild</option>
-              <option value="moderate">Moderate</option>
-              <option value="severe">Severe</option>
-            </select>
-          </div>
-        </div>
-        <div className="form-group">
-          <label style={{ color: "black" }}>Describe your symptoms</label>
-          <textarea
-            placeholder="Please describe your symptoms in detail..."
-            value={formData.primaryComplaint.description}
-            onChange={(e) =>
-              handleInputChange(
-                "primaryComplaint",
-                "description",
-                e.target.value
-              )
-            }
-          />
-        </div>
-      </div>
-
-      {/* Submit */}
-      <div className="form-actions">
-        <button type="submit" className="btn btn-success" disabled={loading}>
-          {loading ? "Submitting..." : "✓ Submit Intake Form"}
-        </button>
-        <button
-          type="button"
-          className="btn btn-secondary"
-          onClick={() => setFormData(initialFormState)}
-        >
-          Clear Form
-        </button>
-      </div>
-    </form>
+      )}
+    </div>
   );
 }

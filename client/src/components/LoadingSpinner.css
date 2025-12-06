@@ -1,0 +1,211 @@
+/* ============================================
+   LoadingSpinner - Minimalist Loading Animations
+   ============================================ */
+
+/* Container */
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.loading-spinner--fullpage {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+}
+
+/* Main Spinner - Three Ring Design */
+.loading-spinner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loading-spinner__ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--primary-500, #3b82f6);
+  animation: spinner-rotate 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+}
+
+.loading-spinner__ring:nth-child(1) {
+  animation-delay: -0.45s;
+  opacity: 1;
+}
+
+.loading-spinner__ring:nth-child(2) {
+  animation-delay: -0.3s;
+  opacity: 0.7;
+}
+
+.loading-spinner__ring:nth-child(3) {
+  animation-delay: -0.15s;
+  opacity: 0.4;
+}
+
+/* Size Variants */
+.loading-spinner--sm {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-spinner--sm .loading-spinner__ring {
+  width: 20px;
+  height: 20px;
+  border-width: 2px;
+}
+
+.loading-spinner--md {
+  width: 32px;
+  height: 32px;
+}
+
+.loading-spinner--md .loading-spinner__ring {
+  width: 32px;
+  height: 32px;
+  border-width: 2.5px;
+}
+
+.loading-spinner--lg {
+  width: 48px;
+  height: 48px;
+}
+
+.loading-spinner--lg .loading-spinner__ring {
+  width: 48px;
+  height: 48px;
+  border-width: 3px;
+}
+
+.loading-spinner--xl {
+  width: 64px;
+  height: 64px;
+}
+
+.loading-spinner--xl .loading-spinner__ring {
+  width: 64px;
+  height: 64px;
+  border-width: 3.5px;
+}
+
+/* Loading Text */
+.loading-spinner__text {
+  color: var(--gray-600, #475569);
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 0;
+  animation: text-fade 1.5s ease-in-out infinite;
+}
+
+/* ============================================
+   PulseLoader - For inline/subtle loading
+   ============================================ */
+.pulse-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pulse-loader__dot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--primary-500, #3b82f6);
+  border-radius: 50%;
+  animation: pulse-dot 1.4s ease-in-out infinite;
+}
+
+.pulse-loader__dot:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.pulse-loader__dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.pulse-loader__dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* ============================================
+   ButtonLoader - For button loading states
+   ============================================ */
+.button-loader {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+/* Dark variant for light buttons */
+.button-loader--dark {
+  border-color: rgba(0, 0, 0, 0.15);
+  border-top-color: var(--primary-600, #2563eb);
+}
+
+/* ============================================
+   Keyframe Animations
+   ============================================ */
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes text-fade {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ============================================
+   Reduced Motion Support
+   ============================================ */
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner__ring,
+  .pulse-loader__dot,
+  .button-loader,
+  .loading-spinner__text {
+    animation: none;
+  }
+
+  .loading-spinner__ring {
+    opacity: 0.7;
+    border-color: var(--primary-300, #93c5fd);
+    border-top-color: var(--primary-600, #2563eb);
+  }
+
+  .pulse-loader__dot {
+    opacity: 0.7;
+  }
+}
+

@@ -1,19 +1,42 @@
 import { useState, useEffect } from "react";
 import { patientAPI, treatmentAPI } from "../api/patientAPI";
+import {
+  PatientsIcon,
+  MedicationIcon,
+  ScissorsIcon,
+  WeightIcon,
+  BrainIcon,
+  SleepIcon,
+  HospitalIcon,
+  WarningIcon,
+  SuccessIcon,
+  AlertIcon,
+  RiskIcon,
+  CloseIcon,
+  ClipboardIcon,
+  RefreshIcon,
+  CheckIcon,
+  PencilIcon,
+  ErrorIcon,
+  DurationIcon,
+} from "./Icons";
+import LoadingSpinner, { PulseLoader } from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./PatientList.css";
 
 const COMPLAINT_ICONS = {
-  erectile_dysfunction: "💊",
-  hair_loss: "💇",
-  weight_loss: "⚖️",
-  anxiety: "🧠",
-  insomnia: "😴",
-  other: "🏥",
+  erectile_dysfunction: MedicationIcon,
+  hair_loss: ScissorsIcon,
+  weight_loss: WeightIcon,
+  anxiety: BrainIcon,
+  insomnia: SleepIcon,
+  other: HospitalIcon,
 };
 
 export default function PatientList({ onSelectPatient, refreshTrigger }) {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [treatmentModal, setTreatmentModal] = useState(null);
   const [loadingTreatment, setLoadingTreatment] = useState(false);
@@ -24,15 +47,25 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
 
   const fetchPatients = async () => {
     try {
-      setLoading(true);
+      // Only show full loading spinner on initial load (no patients yet)
+      const isInitialLoad = patients.length === 0;
+      if (isInitialLoad) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
+
       const response = await patientAPI.getAll();
-      setPatients(response.data);
+      // Handle paginated response structure: response.data.data contains the array
+      const patientsData = response.data?.data || response.data || [];
+      setPatients(Array.isArray(patientsData) ? patientsData : []);
       setError(null);
     } catch (err) {
       setError("Failed to load patients. Make sure the server is running.");
       console.error("Error fetching patients:", err);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -49,7 +82,7 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
   };
 
   const handleViewTreatment = async (e, patient) => {
-    e.stopPropagation(); // Prevent card click
+    e.stopPropagation();
     try {
       setLoadingTreatment(true);
       const response = await treatmentAPI.getByPatient(patient._id);
@@ -73,29 +106,36 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
   const getRiskIcon = (level) => {
     switch (level) {
       case "low":
-        return "✅";
+        return <SuccessIcon size={18} className="risk-icon-low" />;
       case "medium":
-        return "⚠️";
+        return <AlertIcon size={18} className="risk-icon-medium" />;
       case "high":
-        return "🔴";
+        return <RiskIcon size={18} className="risk-icon-high" />;
       case "critical":
-        return "🚨";
+        return <ErrorIcon size={18} className="risk-icon-critical" />;
       default:
-        return "❓";
+        return <AlertIcon size={18} />;
     }
   };
 
+  const getComplaintIcon = (condition) => {
+    const IconComponent = COMPLAINT_ICONS[condition] || COMPLAINT_ICONS.other;
+    return <IconComponent size={24} />;
+  };
+
   if (loading) {
-    return <div className="loading-spinner">Loading patients...</div>;
+    return <LoadingSpinner size="lg" text="Loading patients..." />;
   }
 
   if (error) {
     return (
       <div className="patient-list">
-        <div className="empty-state">
-          <h3>⚠️ {error}</h3>
+        <div className="empty-state error">
+          <WarningIcon size={48} />
+          <h3>{error}</h3>
           <button className="btn btn-primary" onClick={fetchPatients}>
-            Retry
+            <RefreshIcon size={16} />
+            <span>Retry</span>
           </button>
         </div>
       </div>
@@ -104,10 +144,19 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
 
   return (
     <div className="patient-list">
-      <h1>👥 Patient Records</h1>
+      <div className="list-header">
+        <PatientsIcon size={28} />
+        <h1>Patient Records</h1>
+        {isRefreshing && (
+          <span className="refresh-indicator">
+            <PulseLoader />
+          </span>
+        )}
+      </div>
 
       {patients.length === 0 ? (
         <div className="empty-state">
+          <PatientsIcon size={48} />
           <h3>No patients found</h3>
           <p>Submit a patient intake form to get started.</p>
         </div>
@@ -140,7 +189,7 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
 
               <div className="patient-complaint">
                 <span className="complaint-icon">
-                  {COMPLAINT_ICONS[patient.primaryComplaint?.condition] || "🏥"}
+                  {getComplaintIcon(patient.primaryComplaint?.condition)}
                 </span>
                 <div className="complaint-details">
                   <div className="complaint-condition">
@@ -188,7 +237,8 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
                   ?.slice(0, 3)
                   .map((allergy) => (
                     <span key={allergy} className="tag allergy">
-                      ⚠️ {allergy}
+                      <WarningIcon size={12} />
+                      {allergy}
                     </span>
                   ))}
                 {patient.medicalHistory?.conditions
@@ -204,7 +254,10 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
               {patient.currentMedications?.length > 0 && (
                 <div className="medications-section">
                   <div className="medications-header">
-                    💊 Current Medications ({patient.currentMedications.length})
+                    <MedicationIcon size={14} />
+                    <span>
+                      Current Medications ({patient.currentMedications.length})
+                    </span>
                   </div>
                   <div className="medications-list">
                     {patient.currentMedications.map((med, index) => (
@@ -219,7 +272,7 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
                 </div>
               )}
 
-              {/* View Treatment Button for patients with treatment plans */}
+              {/* View Treatment Button */}
               {(patient.status === "treatment_planned" ||
                 patient.status === "reviewed") && (
                 <button
@@ -227,7 +280,8 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
                   onClick={(e) => handleViewTreatment(e, patient)}
                   disabled={loadingTreatment}
                 >
-                  📋 View Treatment Plan
+                  <ClipboardIcon size={16} />
+                  <span>View Treatment Plan</span>
                 </button>
               )}
             </div>
@@ -242,7 +296,7 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
             <div className="modal-header">
               <h2>Treatment Plan</h2>
               <button className="modal-close" onClick={closeTreatmentModal}>
-                ×
+                <CloseIcon size={20} />
               </button>
             </div>
 
@@ -252,10 +306,30 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
                 {treatmentModal.patient.lastName}
               </h3>
               <span className={`modal-status ${treatmentModal.plan.status}`}>
-                {treatmentModal.plan.status === "approved" && "✅ Approved"}
-                {treatmentModal.plan.status === "modified" && "✏️ Modified"}
-                {treatmentModal.plan.status === "rejected" && "❌ Rejected"}
-                {treatmentModal.plan.status === "pending" && "⏳ Pending"}
+                {treatmentModal.plan.status === "approved" && (
+                  <>
+                    <CheckIcon size={14} />
+                    <span>Approved</span>
+                  </>
+                )}
+                {treatmentModal.plan.status === "modified" && (
+                  <>
+                    <PencilIcon size={14} />
+                    <span>Modified</span>
+                  </>
+                )}
+                {treatmentModal.plan.status === "rejected" && (
+                  <>
+                    <CloseIcon size={14} />
+                    <span>Rejected</span>
+                  </>
+                )}
+                {treatmentModal.plan.status === "pending" && (
+                  <>
+                    <DurationIcon size={14} />
+                    <span>Pending</span>
+                  </>
+                )}
               </span>
             </div>
 
@@ -320,8 +394,11 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
             {treatmentModal.plan.drugInteractions?.length > 0 && (
               <div className="modal-section">
                 <h4>
-                  ⚠️ Drug Interactions (
-                  {treatmentModal.plan.drugInteractions.length})
+                  <WarningIcon size={16} />
+                  <span>
+                    Drug Interactions (
+                    {treatmentModal.plan.drugInteractions.length})
+                  </span>
                 </h4>
                 <div className="modal-interactions">
                   {treatmentModal.plan.drugInteractions
@@ -368,7 +445,6 @@ export default function PatientList({ onSelectPatient, refreshTrigger }) {
                 className="btn-primary"
                 onClick={() => {
                   closeTreatmentModal();
-                  // Pass patient with existing treatment plan so wizard jumps to review/final step
                   onSelectPatient &&
                     onSelectPatient(
                       treatmentModal.patient,

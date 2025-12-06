@@ -9,6 +9,12 @@ const medicationSchema = new mongoose.Schema({
 
 const patientSchema = new mongoose.Schema(
   {
+    // Link to User account (for patient login)
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     // Basic Info
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
@@ -106,5 +112,11 @@ patientSchema.pre("save", async function () {
     );
   }
 });
+
+// Indexes for common query patterns
+patientSchema.index({ status: 1, createdAt: -1 }); // List by status, sorted by date
+patientSchema.index({ lastName: 1, firstName: 1 }); // Name search
+patientSchema.index({ "primaryComplaint.condition": 1 }); // Filter by condition
+patientSchema.index({ createdAt: -1 }); // Default sort
 
 module.exports = mongoose.model("Patient", patientSchema);

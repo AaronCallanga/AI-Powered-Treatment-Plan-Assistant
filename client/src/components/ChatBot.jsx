@@ -1,27 +1,48 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { chatAPI } from "../api/patientAPI";
+import {
+  ChatIcon,
+  CloseIcon,
+  TrashIcon,
+  SendIcon,
+  MicIcon,
+  MicOffIcon,
+  WarningIcon,
+  MedicationIcon,
+  ClipboardIcon,
+  BanIcon,
+  AIIcon,
+  PatientIcon,
+  GlobeIcon,
+  CheckIcon,
+  TreatmentIcon,
+  SpeakerIcon,
+  SpeakerOffIcon,
+  SpinnerIcon,
+} from "./Icons";
+import AlertModal from "./AlertModal";
 import "./ChatBot.css";
 
 // Supported languages for speech recognition
 const SUPPORTED_LANGUAGES = [
-  { code: "en-US", name: "English (US)", flag: "🇺🇸" },
-  { code: "en-GB", name: "English (UK)", flag: "🇬🇧" },
-  { code: "es-ES", name: "Spanish", flag: "🇪🇸" },
-  { code: "fr-FR", name: "French", flag: "🇫🇷" },
-  { code: "de-DE", name: "German", flag: "🇩🇪" },
-  { code: "it-IT", name: "Italian", flag: "🇮🇹" },
-  { code: "pt-BR", name: "Portuguese (BR)", flag: "🇧🇷" },
-  { code: "zh-CN", name: "Chinese (Simplified)", flag: "🇨🇳" },
-  { code: "ja-JP", name: "Japanese", flag: "🇯🇵" },
-  { code: "ko-KR", name: "Korean", flag: "🇰🇷" },
-  { code: "ar-SA", name: "Arabic", flag: "🇸🇦" },
-  { code: "hi-IN", name: "Hindi", flag: "🇮🇳" },
-  { code: "ru-RU", name: "Russian", flag: "🇷🇺" },
-  { code: "nl-NL", name: "Dutch", flag: "🇳🇱" },
-  { code: "pl-PL", name: "Polish", flag: "🇵🇱" },
-  { code: "vi-VN", name: "Vietnamese", flag: "🇻🇳" },
-  { code: "th-TH", name: "Thai", flag: "🇹🇭" },
-  { code: "tl-PH", name: "Filipino", flag: "🇵🇭" },
+  { code: "en-US", name: "English (US)", flag: "US" },
+  { code: "en-GB", name: "English (UK)", flag: "GB" },
+  { code: "es-ES", name: "Spanish", flag: "ES" },
+  { code: "fr-FR", name: "French", flag: "FR" },
+  { code: "de-DE", name: "German", flag: "DE" },
+  { code: "it-IT", name: "Italian", flag: "IT" },
+  { code: "pt-BR", name: "Portuguese (BR)", flag: "BR" },
+  { code: "zh-CN", name: "Chinese", flag: "CN" },
+  { code: "ja-JP", name: "Japanese", flag: "JP" },
+  { code: "ko-KR", name: "Korean", flag: "KR" },
+  { code: "ar-SA", name: "Arabic", flag: "SA" },
+  { code: "hi-IN", name: "Hindi", flag: "IN" },
+  { code: "ru-RU", name: "Russian", flag: "RU" },
+  { code: "nl-NL", name: "Dutch", flag: "NL" },
+  { code: "pl-PL", name: "Polish", flag: "PL" },
+  { code: "vi-VN", name: "Vietnamese", flag: "VN" },
+  { code: "th-TH", name: "Thai", flag: "TH" },
+  { code: "tl-PH", name: "Filipino", flag: "PH" },
 ];
 
 function ChatBot({ currentPatient = null }) {
@@ -47,6 +68,21 @@ function ChatBot({ currentPatient = null }) {
   const [interimTranscript, setInterimTranscript] = useState("");
   const recognitionRef = useRef(null);
   const languageMenuRef = useRef(null);
+
+  // Text-to-speech state
+  const [playingMessageIndex, setPlayingMessageIndex] = useState(null);
+  const [loadingTTSIndex, setLoadingTTSIndex] = useState(null);
+  const [selectedVoice, setSelectedVoice] = useState("nova");
+  const audioRef = useRef(null);
+  const audioUrlRef = useRef(null);
+
+  // Alert modal state
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "error",
+  });
 
   // Check for speech recognition support
   useEffect(() => {
@@ -91,9 +127,13 @@ function ChatBot({ currentPatient = null }) {
     recognition.onerror = (event) => {
       console.error("Speech recognition error:", event.error);
       if (event.error === "not-allowed") {
-        alert(
-          "Microphone access denied. Please allow microphone access to use voice input."
-        );
+        setAlertModal({
+          isOpen: true,
+          title: "Microphone Access Required",
+          message:
+            "Microphone access was denied. Please allow microphone access in your browser settings to use voice input.",
+          type: "warning",
+        });
       }
       setIsListening(false);
       setInterimTranscript("");
@@ -101,7 +141,6 @@ function ChatBot({ currentPatient = null }) {
 
     recognition.onend = () => {
       if (isListening) {
-        // Restart if we're still supposed to be listening
         try {
           recognition.start();
         } catch (e) {
@@ -132,6 +171,104 @@ function ChatBot({ currentPatient = null }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+    };
+  }, []);
+
+  // Auto-resize textarea
+  const handleTextareaChange = useCallback((e) => {
+    const textarea = e.target;
+    setInputMessage(textarea.value);
+
+    // Reset height to auto to get the correct scrollHeight
+    textarea.style.height = "auto";
+    // Set height to scrollHeight, but cap at max-height
+    const maxHeight = 120;
+    const newHeight = Math.min(textarea.scrollHeight, maxHeight);
+    textarea.style.height = `${newHeight}px`;
+  }, []);
+
+  // Reset textarea height when input is cleared
+  useEffect(() => {
+    if (!inputMessage && inputRef.current) {
+      inputRef.current.style.height = "auto";
+    }
+  }, [inputMessage]);
+
+  // Text-to-speech handler
+  const handleTextToSpeech = useCallback(
+    async (messageIndex, text) => {
+      // If already playing this message, stop it
+      if (playingMessageIndex === messageIndex) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+        }
+        setPlayingMessageIndex(null);
+        return;
+      }
+
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+
+      setLoadingTTSIndex(messageIndex);
+      setPlayingMessageIndex(null);
+
+      try {
+        const audioBlob = await chatAPI.textToSpeech(text, selectedVoice);
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioUrlRef.current = audioUrl;
+
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          setPlayingMessageIndex(null);
+          URL.revokeObjectURL(audioUrl);
+          audioUrlRef.current = null;
+        };
+
+        audio.onerror = () => {
+          console.error("Audio playback error");
+          setPlayingMessageIndex(null);
+          setLoadingTTSIndex(null);
+        };
+
+        await audio.play();
+        setPlayingMessageIndex(messageIndex);
+      } catch (error) {
+        console.error("TTS error:", error);
+        setAlertModal({
+          isOpen: true,
+          title: "Speech Generation Failed",
+          message:
+            "Failed to generate speech. Please check your connection and try again.",
+          type: "error",
+        });
+      } finally {
+        setLoadingTTSIndex(null);
+      }
+    },
+    [playingMessageIndex, selectedVoice]
+  );
+
   const toggleListening = useCallback(() => {
     if (!recognitionRef.current) return;
 
@@ -154,7 +291,6 @@ function ChatBot({ currentPatient = null }) {
     setSelectedLanguage(langCode);
     setShowLanguageMenu(false);
 
-    // Restart recognition with new language if currently listening
     if (isListening && recognitionRef.current) {
       recognitionRef.current.stop();
       setTimeout(() => {
@@ -199,13 +335,11 @@ function ChatBot({ currentPatient = null }) {
     setShowQuickActions(false);
 
     try {
-      // Build conversation history for context
       const conversationHistory = messages.map((msg) => ({
         role: msg.role,
         content: msg.content,
       }));
 
-      // Build patient context if available
       let patientContext = null;
       if (currentPatient) {
         patientContext = {
@@ -247,13 +381,6 @@ function ChatBot({ currentPatient = null }) {
     }
   };
 
-  const handleKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   const handleQuickAction = (action) => {
     const quickPrompts = {
       interactions:
@@ -277,23 +404,93 @@ function ChatBot({ currentPatient = null }) {
   };
 
   const formatMessage = (content) => {
-    // Simple markdown-like formatting
-    return content
-      .split("\n")
-      .map((line, i) => {
-        // Bold text
-        line = line.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
-        // Bullet points
-        if (line.startsWith("• ") || line.startsWith("- ")) {
-          return `<li key="${i}">${line.substring(2)}</li>`;
+    const lines = content.split("\n");
+    let html = "";
+    let inList = false;
+    let listType = null; // 'ul' or 'ol'
+
+    const closeList = () => {
+      if (inList) {
+        html += listType === "ol" ? "</ol>" : "</ul>";
+        inList = false;
+        listType = null;
+      }
+    };
+
+    const formatInlineText = (text) => {
+      // Bold text with **...**
+      text = text.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+      // Italic text with *...*
+      text = text.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, "<em>$1</em>");
+      // Inline code with `...`
+      text = text.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+      // Format labels like "Drugs:", "Consideration:", "Reason:", etc.
+      text = text.replace(
+        /^([\w\s]+):\s*/,
+        '<span class="chat-label">$1:</span> '
+      );
+      return text;
+    };
+
+    lines.forEach((line, i) => {
+      const trimmedLine = line.trim();
+
+      // Skip empty lines but close any open lists
+      if (!trimmedLine) {
+        closeList();
+        html += '<div class="chat-spacer"></div>';
+        return;
+      }
+
+      // Handle headers (### Header, #### Header, etc.)
+      const headerMatch = trimmedLine.match(/^(#{1,6})\s+(.+)$/);
+      if (headerMatch) {
+        closeList();
+        const level = headerMatch[1].length;
+        const headerText = formatInlineText(headerMatch[2]);
+        const headerClass = level <= 3 ? "chat-header-main" : "chat-header-sub";
+        html += `<h${Math.min(
+          level + 2,
+          6
+        )} class="${headerClass}">${headerText}</h${Math.min(level + 2, 6)}>`;
+        return;
+      }
+
+      // Handle bullet points (- item or • item)
+      if (trimmedLine.startsWith("- ") || trimmedLine.startsWith("• ")) {
+        if (!inList || listType !== "ul") {
+          closeList();
+          html += '<ul class="chat-list">';
+          inList = true;
+          listType = "ul";
         }
-        // Numbered lists
-        if (/^\d+\.\s/.test(line)) {
-          return `<li key="${i}">${line.replace(/^\d+\.\s/, "")}</li>`;
+        const itemContent = formatInlineText(trimmedLine.substring(2));
+        html += `<li>${itemContent}</li>`;
+        return;
+      }
+
+      // Handle numbered lists (1. item)
+      const numberedMatch = trimmedLine.match(/^(\d+)\.\s+(.+)$/);
+      if (numberedMatch) {
+        if (!inList || listType !== "ol") {
+          closeList();
+          html += '<ol class="chat-list">';
+          inList = true;
+          listType = "ol";
         }
-        return line;
-      })
-      .join("<br/>");
+        const itemContent = formatInlineText(numberedMatch[2]);
+        html += `<li>${itemContent}</li>`;
+        return;
+      }
+
+      // Regular paragraph
+      closeList();
+      const formattedLine = formatInlineText(trimmedLine);
+      html += `<p class="chat-paragraph">${formattedLine}</p>`;
+    });
+
+    closeList();
+    return html;
   };
 
   return (
@@ -304,36 +501,7 @@ function ChatBot({ currentPatient = null }) {
         onClick={toggleChat}
         title="Clinical Assistant Chat"
       >
-        {isOpen ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18"></line>
-            <line x1="6" y1="6" x2="18" y2="18"></line>
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-          </svg>
-        )}
+        {isOpen ? <CloseIcon size={24} /> : <ChatIcon size={24} />}
         {!isOpen && <span className="chat-badge">AI</span>}
       </button>
 
@@ -342,24 +510,7 @@ function ChatBot({ currentPatient = null }) {
         <div className="chat-header">
           <div className="chat-header-info">
             <div className="chat-avatar">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 8V4H8"></path>
-                <rect x="2" y="8" width="20" height="12" rx="2"></rect>
-                <path d="M6 16h.01"></path>
-                <path d="M10 16h.01"></path>
-                <path d="M14 16h.01"></path>
-                <path d="M18 16h.01"></path>
-              </svg>
+              <AIIcon size={24} />
             </div>
             <div>
               <h3>Clinical Assistant</h3>
@@ -375,47 +526,21 @@ function ChatBot({ currentPatient = null }) {
               className="chat-action-btn"
               title="Clear chat"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
+              <TrashIcon size={18} />
             </button>
             <button
               onClick={toggleChat}
               className="chat-close-btn"
               title="Close chat"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
+              <CloseIcon size={20} />
             </button>
           </div>
         </div>
 
         {currentPatient && (
           <div className="chat-patient-context">
-            <span className="context-icon">👤</span>
+            <PatientIcon size={16} />
             <span>
               Context: {currentPatient.firstName} {currentPatient.lastName} (
               {currentPatient.age}y, {currentPatient.sex})
@@ -433,22 +558,7 @@ function ChatBot({ currentPatient = null }) {
             >
               {msg.role === "assistant" && (
                 <div className="message-avatar">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M12 8V4H8"></path>
-                    <rect x="2" y="8" width="20" height="12" rx="2"></rect>
-                    <path d="M6 16h.01"></path>
-                    <path d="M10 16h.01"></path>
-                  </svg>
+                  <TreatmentIcon size={16} />
                 </div>
               )}
               <div className="message-content">
@@ -462,9 +572,44 @@ function ChatBot({ currentPatient = null }) {
                   <div className="drug-context-pills">
                     {msg.drugContext.map((drug, i) => (
                       <span key={i} className="drug-pill">
-                        💊 {drug}
+                        <MedicationIcon size={12} />
+                        {drug}
                       </span>
                     ))}
+                  </div>
+                )}
+                {/* Text-to-speech button for assistant messages */}
+                {msg.role === "assistant" && !msg.isError && (
+                  <div className="message-actions">
+                    <button
+                      className={`tts-btn ${
+                        playingMessageIndex === index ? "playing" : ""
+                      } ${loadingTTSIndex === index ? "loading" : ""}`}
+                      onClick={() => handleTextToSpeech(index, msg.content)}
+                      disabled={
+                        loadingTTSIndex !== null && loadingTTSIndex !== index
+                      }
+                      title={
+                        playingMessageIndex === index
+                          ? "Stop speaking"
+                          : "Read aloud"
+                      }
+                    >
+                      {loadingTTSIndex === index ? (
+                        <SpinnerIcon size={14} className="spin" />
+                      ) : playingMessageIndex === index ? (
+                        <SpeakerOffIcon size={14} />
+                      ) : (
+                        <SpeakerIcon size={14} />
+                      )}
+                      <span className="tts-label">
+                        {loadingTTSIndex === index
+                          ? "Loading..."
+                          : playingMessageIndex === index
+                          ? "Stop"
+                          : "Listen"}
+                      </span>
+                    </button>
                   </div>
                 )}
               </div>
@@ -473,22 +618,7 @@ function ChatBot({ currentPatient = null }) {
           {isLoading && (
             <div className="chat-message assistant loading">
               <div className="message-avatar">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 8V4H8"></path>
-                  <rect x="2" y="8" width="20" height="12" rx="2"></rect>
-                  <path d="M6 16h.01"></path>
-                  <path d="M10 16h.01"></path>
-                </svg>
+                <TreatmentIcon size={16} />
               </div>
               <div className="message-content">
                 <div className="typing-indicator">
@@ -505,16 +635,20 @@ function ChatBot({ currentPatient = null }) {
         {showQuickActions && (
           <div className="quick-actions">
             <button onClick={() => handleQuickAction("interactions")}>
-              ⚠️ Drug Interactions
+              <WarningIcon size={14} />
+              <span>Drug Interactions</span>
             </button>
             <button onClick={() => handleQuickAction("dosage")}>
-              💊 Dosage Help
+              <MedicationIcon size={14} />
+              <span>Dosage Help</span>
             </button>
             <button onClick={() => handleQuickAction("guidelines")}>
-              📋 Guidelines
+              <ClipboardIcon size={14} />
+              <span>Guidelines</span>
             </button>
             <button onClick={() => handleQuickAction("contraindications")}>
-              🚫 Contraindications
+              <BanIcon size={14} />
+              <span>Contraindications</span>
             </button>
           </div>
         )}
@@ -528,7 +662,7 @@ function ChatBot({ currentPatient = null }) {
                 onClick={() => setShowLanguageMenu(!showLanguageMenu)}
                 title={`Language: ${getCurrentLanguage().name}`}
               >
-                <span className="lang-flag">{getCurrentLanguage().flag}</span>
+                <GlobeIcon size={16} />
               </button>
               {showLanguageMenu && (
                 <div className="language-menu">
@@ -541,10 +675,10 @@ function ChatBot({ currentPatient = null }) {
                       }`}
                       onClick={() => handleLanguageChange(lang.code)}
                     >
-                      <span className="lang-flag">{lang.flag}</span>
+                      <span className="lang-code">{lang.flag}</span>
                       <span className="lang-name">{lang.name}</span>
                       {selectedLanguage === lang.code && (
-                        <span className="lang-check">✓</span>
+                        <CheckIcon size={14} className="lang-check" />
                       )}
                     </button>
                   ))}
@@ -557,18 +691,27 @@ function ChatBot({ currentPatient = null }) {
             <textarea
               ref={inputRef}
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onChange={handleTextareaChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSendMessage();
+                }
+              }}
               placeholder={
                 isListening
-                  ? "Listening..."
-                  : "Ask about medications, interactions, guidelines..."
+                  ? "🎤 Listening... speak now"
+                  : "How can I help you?"
               }
               rows={1}
               disabled={isLoading}
+              className={isListening ? "listening" : ""}
             />
             {interimTranscript && (
-              <div className="interim-transcript">{interimTranscript}</div>
+              <div className="interim-transcript">
+                <MicIcon size={14} />
+                <span>{interimTranscript}</span>
+              </div>
             )}
           </div>
 
@@ -580,34 +723,7 @@ function ChatBot({ currentPatient = null }) {
               className={`mic-btn ${isListening ? "listening" : ""}`}
               title={isListening ? "Stop listening" : "Start voice input"}
             >
-              {isListening ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  stroke="none"
-                >
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path>
-                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-                  <line x1="12" x2="12" y1="19" y2="22"></line>
-                </svg>
-              )}
+              {isListening ? <MicOffIcon size={20} /> : <MicIcon size={20} />}
               {isListening && <span className="listening-pulse"></span>}
             </button>
           )}
@@ -617,30 +733,29 @@ function ChatBot({ currentPatient = null }) {
             disabled={!inputMessage.trim() || isLoading}
             className="send-btn"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="22" y1="2" x2="11" y2="13"></line>
-              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-            </svg>
+            <SendIcon size={20} />
           </button>
         </div>
 
         <div className="chat-disclaimer">
-          ⚕️ AI-assisted guidance. Always verify with clinical judgment.
+          <TreatmentIcon size={14} />
+          <span>
+            AI-assisted guidance. Always verify with clinical judgment.
+          </span>
         </div>
       </div>
 
       {/* Overlay */}
       {isOpen && <div className="chat-overlay" onClick={toggleChat}></div>}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </>
   );
 }

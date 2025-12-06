@@ -173,4 +173,11 @@ const treatmentPlanSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Indexes for common query patterns
+treatmentPlanSchema.index({ patientId: 1, createdAt: -1 }); // Plans by patient
+treatmentPlanSchema.index({ status: 1, createdAt: -1 }); // List by status
+treatmentPlanSchema.index({ "safetyAssessment.overallRiskLevel": 1 }); // Filter by risk
+treatmentPlanSchema.index({ createdAt: -1 }); // Default sort
+treatmentPlanSchema.index({ reviewedBy: 1, reviewedAt: -1 }); // Audit queries
+
 module.exports = mongoose.model("TreatmentPlan", treatmentPlanSchema);
