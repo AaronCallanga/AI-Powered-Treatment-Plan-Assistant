@@ -1557,8 +1557,13 @@ export default function TreatmentWizard({
             {/* Reviewer Information */}
             <div className="reviewer-section">
               <div className="form-group">
-                <label>Reviewing Physician *</label>
+                <label style={{color: "black"}}>Reviewing Physician *</label>
                 <input
+                style={{
+                marginTop: "0.25rem",
+                color: "black",
+                border: "2px solid black",
+              }}
                   type="text"
                   value={reviewedBy}
                   onChange={(e) => setReviewedBy(e.target.value)}
@@ -1566,7 +1571,7 @@ export default function TreatmentWizard({
                 />
               </div>
               <div className="form-group">
-                <label>Review Notes</label>
+                <label style={{color: "black"}}>Review Notes</label>
                 <textarea
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
@@ -2158,24 +2163,38 @@ export default function TreatmentWizard({
               alignItems: "center",
               padding: "1.25rem 1.5rem",
               borderBottom: "1px solid #e9ecef",
-              background: "linear-gradient(135deg, #6c5ce7, #a29bfe)",
+              background: "#004d99",
               color: "white",
             }}
           >
-            <h2 style={{ margin: 0, fontSize: "1.25rem" }}>
+            <h2
+              style={{
+                margin: 0,
+                fontSize: "1.25rem",
+                fontWeight: "600",
+                color: "white",
+              }}
+            >
               📋 Complete Treatment Analysis
             </h2>
             <button
               onClick={() => setShowDetailedView(false)}
               style={{
-                background: "rgba(255, 255, 255, 0.2)",
-                border: "none",
+                background: "rgba(255, 255, 255, 0.25)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
                 fontSize: "1.5rem",
                 color: "white",
                 cursor: "pointer",
                 padding: "0.25rem 0.75rem",
                 borderRadius: "6px",
+                fontWeight: "bold",
               }}
+              onMouseOver={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.35)")
+              }
+              onMouseOut={(e) =>
+                (e.target.style.background = "rgba(255, 255, 255, 0.25)")
+              }
             >
               ×
             </button>
@@ -2223,7 +2242,7 @@ export default function TreatmentWizard({
                   : "⚪"}
               </div>
               <div>
-                <h2 style={{ margin: 0 }}>
+                <h2 style={{ margin: 0, color: "white" }}>
                   Overall Risk Level: {riskLevel.toUpperCase()}
                 </h2>
                 <p style={{ margin: "0.25rem 0 0 0" }}>
@@ -2786,12 +2805,21 @@ export default function TreatmentWizard({
               onClick={handlePrintFullAnalysis}
               style={{
                 padding: "0.75rem 1.5rem",
-                border: "1px solid #3498db",
+                border: "2px solid #0066cc",
                 borderRadius: "8px",
                 background: "white",
-                color: "#3498db",
+                color: "#0066cc",
                 cursor: "pointer",
-                fontWeight: 500,
+                fontWeight: 600,
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = "#0066cc";
+                e.target.style.color = "white";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = "white";
+                e.target.style.color = "#0066cc";
               }}
             >
               🖨️ Print Full Analysis
@@ -2800,10 +2828,21 @@ export default function TreatmentWizard({
               onClick={() => setShowDetailedView(false)}
               style={{
                 padding: "0.75rem 1.5rem",
-                border: "1px solid #ddd",
+                border: "2px solid #6c757d",
                 borderRadius: "8px",
                 background: "white",
+                color: "#6c757d",
                 cursor: "pointer",
+                fontWeight: 600,
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e) => {
+                e.target.style.background = "#6c757d";
+                e.target.style.color = "white";
+              }}
+              onMouseOut={(e) => {
+                e.target.style.background = "white";
+                e.target.style.color = "#6c757d";
               }}
             >
               Close
@@ -2818,10 +2857,18 @@ export default function TreatmentWizard({
                 padding: "0.75rem 1.5rem",
                 border: "none",
                 borderRadius: "8px",
-                background: "#9b59b6",
+                background: "#0066cc",
                 color: "white",
                 cursor: regenerating ? "not-allowed" : "pointer",
                 opacity: regenerating ? 0.6 : 1,
+                fontWeight: 600,
+                transition: "all 0.2s",
+              }}
+              onMouseOver={(e) => {
+                if (!regenerating) e.target.style.background = "#0052a3";
+              }}
+              onMouseOut={(e) => {
+                if (!regenerating) e.target.style.background = "#0066cc";
               }}
             >
               🔄 Re-Analyze / Regenerate

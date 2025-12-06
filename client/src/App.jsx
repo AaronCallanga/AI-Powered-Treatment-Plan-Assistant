@@ -1,16 +1,27 @@
 import { useState, useEffect } from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import LandingPage from "./components/LandingPage";
 import PatientIntakeForm from "./components/PatientIntakeForm";
 import PatientList from "./components/PatientList";
 import ClinicalDashboard from "./components/ClinicalDashboard";
 import TreatmentWizard from "./components/TreatmentWizard";
 import ChatBot from "./components/ChatBot";
+import Login from "./components/Login";
+import ProtectedRoute from "./components/ProtectedRoute";
 import "./App.css";
 
-function App() {
-  const [currentView, setCurrentView] = useState("intake");
+function MainApp() {
+  const [currentView, setCurrentView] = useState("patients");
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [serverStatus, setServerStatus] = useState("checking");
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const { user, logout } = useAuth();
 
   useEffect(() => {
     checkServerConnection();
@@ -60,28 +71,46 @@ function App() {
       <nav className="nav">
         <div className="nav-brand">
           <span>🏥</span>
-          Clinical Assistant
+          MediAssist
         </div>
         <div className="nav-links">
           <button
             className={`nav-link ${currentView === "intake" ? "active" : ""}`}
             onClick={() => setCurrentView("intake")}
+            title="New Intake"
           >
-            📋 New Intake
+            <span className="nav-icon">📋</span>
+            <span className="nav-text">Intake</span>
           </button>
           <button
             className={`nav-link ${currentView === "patients" ? "active" : ""}`}
             onClick={() => setCurrentView("patients")}
+            title="Patients"
           >
-            👥 Patients
+            <span className="nav-icon">👥</span>
+            <span className="nav-text">Patients</span>
           </button>
           {selectedPatient && (
             <button
               className={`nav-link ${currentView === "wizard" ? "active" : ""}`}
               onClick={() => setCurrentView("wizard")}
+              title="Treatment"
             >
-              🩺 Treatment
+              <span className="nav-icon">🩺</span>
+              <span className="nav-text">Treatment</span>
             </button>
+          )}
+        </div>
+        <div className="nav-user">
+          {user && (
+            <>
+              <span className="user-info">
+                {user.firstName} {user.lastName}
+              </span>
+              <button className="logout-button" onClick={logout}>
+                Logout
+              </button>
+            </>
           )}
         </div>
       </nav>
@@ -122,6 +151,28 @@ function App() {
       {/* ChatBot - available on all pages */}
       <ChatBot currentPatient={selectedPatient} />
     </div>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute requiredRoles={["admin", "doctor"]}>
+                <MainApp />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Router>
+    </AuthProvider>
   );
 }
 

@@ -1,0 +1,412 @@
+.voice-dictation {
+  padding: 24px;
+  background: white;
+  border-radius: 12px;
+}
+
+.dictation-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.dictation-header h2 {
+  margin: 0 0 10px 0;
+  font-size: 28px;
+  color: #003d82;
+  font-weight: 700;
+}
+
+.dictation-header p {
+  margin: 0;
+  color: #3b82f6;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.dictation-error {
+  background: #fee;
+  color: #c33;
+  padding: 14px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  border: 1px solid #fcc;
+  border-left: 4px solid #c33;
+  font-weight: 500;
+}
+
+/* Recording Section */
+.recording-section {
+  min-height: 350px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.ready-state,
+.recording-state,
+.recorded-state {
+  text-align: center;
+  width: 100%;
+}
+
+/* Ready State */
+.ready-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.mic-icon {
+  font-size: 100px;
+  animation: pulse 2s infinite;
+  opacity: 0.8;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
+.btn-start-recording {
+  padding: 16px 48px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 8px 24px rgba(0, 102, 204, 0.3);
+  letter-spacing: 0.5px;
+}
+
+.btn-start-recording:hover {
+  background: #0052a3;
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 102, 204, 0.4);
+}
+
+/* Recording State */
+.recording-indicator {
+  font-size: 80px;
+  animation: blink 1s infinite;
+  margin-bottom: 16px;
+}
+
+.recording-indicator.paused {
+  animation: none;
+  opacity: 0.5;
+}
+
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.recording-time {
+  font-size: 56px;
+  font-weight: 700;
+  color: #003d82;
+  font-family: "Courier New", monospace;
+  margin-bottom: 16px;
+  letter-spacing: 2px;
+}
+
+.recording-status {
+  color: #3b82f6;
+  font-size: 18px;
+  margin-bottom: 28px;
+  font-weight: 600;
+}
+
+.recording-controls {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}
+
+.btn-pause,
+.btn-resume,
+.btn-stop {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-pause,
+.btn-resume {
+  background: #f0f4f8;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+}
+
+.btn-pause:hover,
+.btn-resume:hover {
+  background: #e6f2ff;
+  transform: translateY(-1px);
+}
+
+.btn-stop {
+  background: #dc3545;
+  color: white;
+}
+
+.btn-stop:hover {
+  background: #c82333;
+  transform: translateY(-1px);
+}
+
+/* Recorded State */
+.recorded-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.success-icon {
+  font-size: 72px;
+}
+
+.recorded-controls {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.btn-discard,
+.btn-process {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-discard {
+  background: #f0f4f8;
+  color: #666;
+  border: 2px solid #cbd5e0;
+}
+
+.btn-discard:hover {
+  background: #e8ecf1;
+  border-color: #999;
+  transform: translateY(-1px);
+}
+
+.btn-process {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.btn-process:hover {
+  background: #0052a3;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 102, 204, 0.4);
+}
+
+/* Processing State */
+.processing-state {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.processing-spinner {
+  width: 70px;
+  height: 70px;
+  margin: 0 auto 28px;
+  border: 6px solid #e8ecf1;
+  border-top: 6px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.processing-hint {
+  color: #666;
+  font-size: 15px;
+  margin-top: 12px;
+  font-weight: 500;
+}
+
+/* Complete State */
+.complete-state {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.success-header {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #e6f2ff;
+  border-radius: 12px;
+  border-left: 5px solid #3b82f6;
+}
+
+.success-header .success-icon {
+  font-size: 64px;
+  margin-bottom: 12px;
+}
+
+.success-header h3 {
+  margin: 0;
+  color: #003d82;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.transcript-preview {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 24px;
+  border: 1px solid #e0e0e0;
+}
+
+.transcript-preview h4 {
+  margin: 0 0 14px 0;
+  color: #003d82;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.transcript-box {
+  background: white;
+  border: 1px solid #cbd5e0;
+  border-radius: 6px;
+  padding: 14px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #555;
+  font-style: italic;
+}
+
+.extracted-summary {
+  background: #e6f2ff;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 24px;
+  border: 1px solid #b3d9ff;
+  border-left: 5px solid #3b82f6;
+}
+
+.extracted-summary h4 {
+  margin: 0 0 14px 0;
+  color: #003d82;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.summary-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.summary-item {
+  background: white;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 14px;
+  color: #555;
+  border-left: 4px solid #3b82f6;
+}
+
+.summary-item strong {
+  color: #003d82;
+  margin-right: 10px;
+  font-weight: 700;
+}
+
+.complete-actions {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-apply {
+  padding: 14px 40px;
+  background: #c026d3;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  letter-spacing: 0.3px;
+}
+
+.btn-apply:hover {
+  background: #218838;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(40, 167, 69, 0.4);
+}
+
+/* Error State */
+.error-state {
+  text-align: center;
+  padding: 60px 40px;
+}
+
+.error-icon {
+  font-size: 72px;
+  margin-bottom: 20px;
+}
+
+.btn-retry {
+  padding: 12px 32px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(0, 102, 204, 0.3);
+}
+
+.btn-retry:hover {
+  background: #0052a3;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 102, 204, 0.4);
+}

@@ -7,6 +7,16 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true, // Enable cookies for authentication
+});
+
+// Add token to requests if it exists in localStorage
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export const patientAPI = {
@@ -101,6 +111,67 @@ export const chatAPI = {
 
   // Check drug interactions
   checkInteractions: (drugs) => api.post("/chat/check-interactions", { drugs }),
+};
+
+export const consultationAPI = {
+  // Upload and process consultation audio/video
+  uploadMedia: (file, onProgress) => {
+    const formData = new FormData();
+    formData.append("media", file);
+
+    return api.post("/consultation/upload", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+      onUploadProgress: (progressEvent) => {
+        if (onProgress) {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          onProgress(percentCompleted);
+        }
+      },
+    });
+  },
+
+  // Transcribe only (without extraction)
+  transcribeOnly: (file) => {
+    const formData = new FormData();
+    formData.append("media", file);
+
+    return api.post("/consultation/transcribe-only", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  // Extract patient data from text
+  extractFromText: (transcript) =>
+    api.post("/consultation/extract-from-text", { transcript }),
+};
+
+export const authAPI = {
+  // Login
+  login: (username, password) =>
+    api.post("/auth/login", { username, password }),
+
+  // Register new user
+  register: (userData) => api.post("/auth/register", userData),
+
+  // Logout
+  logout: () => api.post("/auth/logout"),
+
+  // Get current user
+  getCurrentUser: () => api.get("/auth/me"),
+};
+
+export const publicAPI = {
+  // Get treatment plan by ID (public route for QR codes)
+  getTreatment: (id) =>
+    axios.get(`${API_BASE_URL}/public/treatment/${id}`, {
+      withCredentials: true,
+    }),
 };
 
 export default api;
