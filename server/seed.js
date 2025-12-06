@@ -1,7 +1,9 @@
 const mongoose = require("mongoose");
 const Patient = require("./models/Patient");
+require("@dotenvx/dotenvx").config({ quiet: true });
 
-const MONGODB_URI = "mongodb://localhost:27017/clinical_assistant";
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://localhost:27017/clinical_assistant";
 
 const samplePatients = [
   {

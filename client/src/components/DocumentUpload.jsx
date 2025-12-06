@@ -1,119 +1,124 @@
-import { useState } from "react";
-import axios from "axios";
+import { useState, useRef, useCallback } from "react";
+import { documentAPI } from "../api/patientAPI";
+import {
+  DocumentIcon,
+  FileIcon,
+  SpreadsheetIcon,
+  ImageIcon,
+  UploadIcon,
+  WarningIcon,
+  SuccessIcon,
+  AIIcon,
+  CloseIcon,
+  SearchIcon,
+  RefreshIcon,
+} from "./Icons";
+import LoadingSpinner from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./DocumentUpload.css";
 
-// Create axios instance with auth token
-const createAuthenticatedAxios = () => {
-  const token = localStorage.getItem("token");
-  return axios.create({
-    baseURL: "http://localhost:3000",
-    headers: {
-      Authorization: token ? `Bearer ${token}` : "",
-    },
-  });
-};
-
-// Helper function to format complex data structures
-const formatDataValue = (value) => {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (typeof item === "object") {
-          return Object.entries(item)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join(", ");
-        }
-        return item;
-      })
-      .join("; ");
-  }
-  if (typeof value === "object") {
-    return Object.entries(value)
-      .map(([k, v]) => {
-        const formattedKey = k.replace(/([A-Z])/g, " $1").trim();
-        if (typeof v === "object") {
-          return `${formattedKey}: ${formatDataValue(v)}`;
-        }
-        return `${formattedKey}: ${v}`;
-      })
-      .join(" | ");
-  }
-  return String(value);
-};
-
-export default function DocumentUpload({ onDataExtracted, onClose }) {
+const DocumentUpload = ({ onDataExtracted, onClose }) => {
   const [file, setFile] = useState(null);
+  const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [result, setResult] = useState(null);
-  const [error, setError] = useState(null);
+  const [processingStage, setProcessingStage] = useState("");
+  const [extractedData, setExtractedData] = useState(null);
+  const [error, setError] = useState("");
+  const fileInputRef = useRef(null);
 
-  const handleFileSelect = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
-      setError(null);
-      setResult(null);
+  const acceptedTypes = {
+    "application/pdf": { name: "PDF Document", Icon: FileIcon },
+    "application/msword": { name: "Word Document", Icon: FileIcon },
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": {
+      name: "Word Document",
+      Icon: FileIcon,
+    },
+    "application/vnd.ms-excel": {
+      name: "Excel Spreadsheet",
+      Icon: SpreadsheetIcon,
+    },
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+      name: "Excel Spreadsheet",
+      Icon: SpreadsheetIcon,
+    },
+    "text/plain": { name: "Text File", Icon: DocumentIcon },
+    "text/csv": { name: "CSV File", Icon: SpreadsheetIcon },
+    "image/jpeg": { name: "JPEG Image", Icon: ImageIcon },
+    "image/png": { name: "PNG Image", Icon: ImageIcon },
+    "image/gif": { name: "GIF Image", Icon: ImageIcon },
+  };
+
+  const getFileIcon = (fileType) => {
+    const typeInfo = acceptedTypes[fileType];
+    if (typeInfo) {
+      return <typeInfo.Icon size={24} />;
     }
+    return <FileIcon size={24} />;
   };
 
-  const handleDrop = (e) => {
+  const getFileTypeName = (fileType) => {
+    return acceptedTypes[fileType]?.name || "Document";
+  };
+
+  const handleDrag = useCallback((e) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
-      setError(null);
-      setResult(null);
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
     }
-  };
+  }, []);
 
-  const handleDragOver = (e) => {
+  const handleDrop = useCallback((e) => {
     e.preventDefault();
-  };
+    e.stopPropagation();
+    setDragActive(false);
+    setError("");
 
-  const handleUpload = async () => {
-    if (!file) {
-      setError("Please select a file to upload");
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      validateAndSetFile(e.dataTransfer.files[0]);
+    }
+  }, []);
+
+  const validateAndSetFile = (selectedFile) => {
+    setError("");
+
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      setError("File too large. Maximum size is 10MB.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("document", file);
+    setFile(selectedFile);
+    setExtractedData(null);
+  };
+
+  const handleFileSelect = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      validateAndSetFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpload = async () => {
+    if (!file) return;
+
+    setUploading(true);
+    setError("");
+    setProcessingStage("Uploading document...");
 
     try {
-      setUploading(true);
-      setError(null);
-      setProgress(0);
-
-      const api = createAuthenticatedAxios();
-      const response = await api.post("/api/documents/upload", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
-          );
-          setProgress(percentCompleted);
-        },
-      });
+      const response = await documentAPI.uploadDocument(file);
 
       if (response.data.success) {
-        setResult(response.data);
-        setProgress(100);
+        setExtractedData(response.data.data.extractedData);
+        setProcessingStage("Complete!");
       } else {
-        setError(response.data.error || "Failed to process document");
+        throw new Error(response.data.error || "Processing failed");
       }
     } catch (err) {
       console.error("Document upload error:", err);
       setError(
-        err.response?.data?.error ||
-          err.message ||
-          "Failed to upload and process document"
+        err.response?.data?.error || err.message || "Failed to process document"
       );
     } finally {
       setUploading(false);
@@ -121,167 +126,203 @@ export default function DocumentUpload({ onDataExtracted, onClose }) {
   };
 
   const handleApplyData = () => {
-    if (result?.extractedData) {
-      onDataExtracted(result.extractedData);
-      onClose();
+    if (extractedData && onDataExtracted) {
+      onDataExtracted(extractedData);
     }
   };
 
-  const getFileIcon = () => {
-    if (!file) return "📄";
-    const ext = file.name.split(".").pop().toLowerCase();
-    switch (ext) {
-      case "pdf":
-        return "📕";
-      case "doc":
-      case "docx":
-        return "📘";
-      case "csv":
-      case "xls":
-      case "xlsx":
-        return "📊";
-      case "jpg":
-      case "jpeg":
-      case "png":
-      case "gif":
-        return "🖼️";
-      default:
-        return "📄";
+  const handleClear = () => {
+    setFile(null);
+    setExtractedData(null);
+    setError("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
   };
 
   return (
     <div className="document-upload">
-      <h2>📄 Upload Medical Document</h2>
-      <p className="document-subtitle">
-        Upload patient documents, lab results, medical records, or images to
-        auto-populate the form
-      </p>
-
-      <div
-        className={`drop-zone ${file ? "has-file" : ""}`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onClick={() => document.getElementById("document-input").click()}
-      >
-        {file ? (
-          <div className="file-preview">
-            <span className="file-icon">{getFileIcon()}</span>
-            <div className="file-info">
-              <p className="file-name">{file.name}</p>
-              <p className="file-size">{(file.size / 1024).toFixed(2)} KB</p>
-            </div>
-            <button
-              type="button"
-              className="remove-file"
-              onClick={(e) => {
-                e.stopPropagation();
-                setFile(null);
-                setResult(null);
-                setError(null);
-              }}
-            >
-              ✕
-            </button>
-          </div>
-        ) : (
-          <div className="drop-placeholder">
-            <span className="upload-icon">📤</span>
-            <p>
-              <strong>Click to browse</strong> or drag and drop
-            </p>
-            <p className="supported-formats">
-              Supported: PDF, DOC, DOCX, CSV, XLS, XLSX, JPG, PNG, WebP, BMP,
-              TIFF (max 10MB)
-            </p>
-          </div>
-        )}
+      <div className="doc-upload-header">
+        <DocumentIcon size={24} />
+        <div>
+          <h3>Upload Medical Documents</h3>
+          <p>
+            Upload patient documents, lab results, prescriptions, or medical
+            records. AI will extract relevant information automatically.
+          </p>
+        </div>
       </div>
 
-      <input
-        id="document-input"
-        type="file"
-        accept=".pdf,.doc,.docx,.csv,.xls,.xlsx,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tiff,.tif,.txt"
-        onChange={handleFileSelect}
-        style={{ display: "none" }}
-      />
-
-      {uploading && (
-        <div className="upload-progress">
-          <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{ width: `${progress}%` }}
-            ></div>
+      {/* Drop Zone */}
+      {!file && !uploading && (
+        <div
+          className={`doc-drop-zone ${dragActive ? "active" : ""}`}
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <div className="doc-drop-content">
+            <UploadIcon size={40} className="drop-icon" />
+            <p className="drop-text">Drag & drop your document here</p>
+            <p className="drop-subtext">or click to browse</p>
+            <p className="file-types">
+              PDF, Word, Excel, CSV, TXT, or Images (max 10MB)
+            </p>
           </div>
-          <p className="progress-text">{progress}%</p>
-          <p className="processing-message">
-            {progress < 100 ? "Uploading document..." : "Processing with AI..."}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.jpg,.jpeg,.png,.gif"
+            onChange={handleFileSelect}
+            style={{ display: "none" }}
+          />
+        </div>
+      )}
+
+      {/* File Preview */}
+      {file && !uploading && !extractedData && (
+        <div className="doc-file-preview">
+          <div className="doc-file-info">
+            <span className="doc-file-icon">{getFileIcon(file.type)}</span>
+            <div className="doc-file-details">
+              <span className="doc-file-name">{file.name}</span>
+              <span className="doc-file-meta">
+                {getFileTypeName(file.type)} • {formatFileSize(file.size)}
+              </span>
+            </div>
+            <button className="doc-clear-btn" onClick={handleClear}>
+              <CloseIcon size={16} />
+            </button>
+          </div>
+          <button
+            className="doc-process-btn"
+            onClick={handleUpload}
+            disabled={uploading}
+          >
+            <AIIcon size={18} />
+            <span>Extract Data with AI</span>
+          </button>
+        </div>
+      )}
+
+      {/* Processing State */}
+      {uploading && (
+        <div className="doc-processing">
+          <LoadingSpinner size="lg" />
+          <p className="processing-stage">{processingStage}</p>
+          <p className="processing-note">
+            Analyzing document and extracting medical information...
           </p>
         </div>
       )}
 
+      {/* Error */}
       {error && (
-        <div className="error-message">
-          <span>⚠️</span>
-          {error}
+        <div className="doc-error">
+          <WarningIcon size={18} />
+          <span>{error}</span>
         </div>
       )}
 
-      {result && (
-        <div className="extraction-result">
-          <h3>✅ Data Extracted Successfully</h3>
+      {/* Extracted Data */}
+      {extractedData && (
+        <div className="doc-extraction-results">
+          <div className="doc-success-header">
+            <SuccessIcon size={24} />
+            <h4>Data Extracted Successfully</h4>
+          </div>
 
-          {result.extractedText && (
-            <div className="extracted-section">
-              <h4>📄 Document Content</h4>
-              <div className="extracted-text">
-                {result.extractedText.substring(0, 500)}
-                {result.extractedText.length > 500 && "..."}
-              </div>
+          <div className="doc-extracted-preview">
+            <h5>
+              <SearchIcon size={16} />
+              <span>Extracted Information</span>
+            </h5>
+            <div className="doc-data-grid">
+              {extractedData.firstName && (
+                <div className="doc-data-item">
+                  <strong>Name:</strong> {extractedData.firstName}{" "}
+                  {extractedData.lastName}
+                </div>
+              )}
+              {extractedData.dateOfBirth && (
+                <div className="doc-data-item">
+                  <strong>DOB:</strong> {extractedData.dateOfBirth}
+                </div>
+              )}
+              {extractedData.gender && (
+                <div className="doc-data-item">
+                  <strong>Gender:</strong> {extractedData.gender}
+                </div>
+              )}
+              {extractedData.primaryComplaint?.condition && (
+                <div className="doc-data-item">
+                  <strong>Condition:</strong>{" "}
+                  {extractedData.primaryComplaint.condition}
+                </div>
+              )}
+              {extractedData.medicalHistory?.conditions?.length > 0 && (
+                <div className="doc-data-item">
+                  <strong>Conditions:</strong>{" "}
+                  {extractedData.medicalHistory.conditions.join(", ")}
+                </div>
+              )}
+              {extractedData.medicalHistory?.allergies?.length > 0 && (
+                <div className="doc-data-item">
+                  <strong>Allergies:</strong>{" "}
+                  {extractedData.medicalHistory.allergies.join(", ")}
+                </div>
+              )}
+              {extractedData.currentMedications?.length > 0 && (
+                <div className="doc-data-item">
+                  <strong>Medications:</strong>{" "}
+                  {extractedData.currentMedications
+                    .map((m) =>
+                      m.dosage ? `${m.drugName} ${m.dosage}` : m.drugName
+                    )
+                    .filter(Boolean)
+                    .join("; ")}
+                </div>
+              )}
+              {extractedData.healthMetrics?.bloodPressure?.systolic && (
+                <div className="doc-data-item">
+                  <strong>Blood Pressure:</strong>{" "}
+                  {extractedData.healthMetrics.bloodPressure.systolic}/
+                  {extractedData.healthMetrics.bloodPressure.diastolic} mmHg
+                </div>
+              )}
             </div>
-          )}
+          </div>
 
-          {result.extractedData && (
-            <div className="extracted-section">
-              <h4>📋 Extracted Patient Information</h4>
-              <div className="data-preview">
-                {Object.entries(result.extractedData).map(([key, value]) => {
-                  if (
-                    !value ||
-                    (typeof value === "object" &&
-                      Object.keys(value).length === 0)
-                  ) {
-                    return null;
-                  }
-                  const displayKey = key
-                    .replace(/([A-Z])/g, " $1")
-                    .replace(/^./, (str) => str.toUpperCase())
-                    .trim();
-                  const displayValue = formatDataValue(value);
-                  return (
-                    <div key={key} className="data-item">
-                      <strong>{displayKey}:</strong> {displayValue}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <button className="apply-button" onClick={handleApplyData}>
-            ✓ Apply to Form
-          </button>
+          <div className="doc-actions">
+            <button className="doc-apply-btn" onClick={handleApplyData}>
+              <SuccessIcon size={18} />
+              <span>Apply to Intake Form</span>
+            </button>
+            <button className="doc-clear-btn-text" onClick={handleClear}>
+              <RefreshIcon size={18} />
+              <span>Upload Another</span>
+            </button>
+          </div>
         </div>
       )}
 
-      {!result && !uploading && file && (
-        <div className="action-buttons">
-          <button className="process-button" onClick={handleUpload}>
-            🤖 Process Document with AI
-          </button>
-        </div>
+      {onClose && (
+        <button className="doc-close-btn" onClick={onClose}>
+          Close
+        </button>
       )}
     </div>
   );
-}
+};
+
+export default DocumentUpload;

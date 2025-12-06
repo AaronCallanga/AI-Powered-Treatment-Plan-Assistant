@@ -1,5 +1,25 @@
 import { useState, useEffect } from "react";
 import { treatmentAPI } from "../api/patientAPI";
+import {
+  ChevronLeftIcon,
+  MedicationIcon,
+  ClipboardIcon,
+  WarningIcon,
+  AIIcon,
+  SuccessIcon,
+  ErrorIcon,
+  AlertIcon,
+  RiskIcon,
+  RefreshIcon,
+  CheckIcon,
+  CloseIcon,
+  PencilIcon,
+  InfoIcon,
+  ExerciseIcon,
+  SafeIcon,
+} from "./Icons";
+import LoadingSpinner from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./ClinicalDashboard.css";
 
 export default function ClinicalDashboard({ patient, onBack }) {
@@ -88,15 +108,15 @@ export default function ClinicalDashboard({ patient, onBack }) {
   const getRiskIcon = (level) => {
     switch (level) {
       case "low":
-        return "✅";
+        return <SafeIcon size={24} />;
       case "medium":
-        return "⚠️";
+        return <AlertIcon size={24} />;
       case "high":
-        return "🔴";
+        return <RiskIcon size={24} />;
       case "critical":
-        return "🚨";
+        return <ErrorIcon size={24} />;
       default:
-        return "❓";
+        return <AlertIcon size={24} />;
     }
   };
 
@@ -144,8 +164,7 @@ export default function ClinicalDashboard({ patient, onBack }) {
     return (
       <div className="clinical-dashboard">
         <div className="loading-overlay">
-          <div className="spinner"></div>
-          <p className="loading-text">Loading treatment plan...</p>
+          <LoadingSpinner size="xl" text="Loading treatment plan..." />
         </div>
       </div>
     );
@@ -155,9 +174,16 @@ export default function ClinicalDashboard({ patient, onBack }) {
     <div className="clinical-dashboard">
       {/* Header */}
       <div className="dashboard-header">
-        <h1>🏥 Clinical Decision Support</h1>
+        <h1>
+          <img
+            src="/icon.png"
+            alt="MedicAI"
+            className="dashboard-header-icon"
+          />{" "}
+          Clinical Decision Support
+        </h1>
         <button className="back-btn" onClick={onBack}>
-          ← Back to Patients
+          <ChevronLeftIcon size={16} /> Back to Patients
         </button>
       </div>
 
@@ -200,7 +226,10 @@ export default function ClinicalDashboard({ patient, onBack }) {
       {/* Current Medications - Always Show */}
       {patient.currentMedications?.length > 0 && (
         <div className="treatment-plan-card">
-          <h3>💊 Current Medications ({patient.currentMedications.length})</h3>
+          <h3>
+            <MedicationIcon size={20} /> Current Medications (
+            {patient.currentMedications.length})
+          </h3>
           <div className="current-medications-grid">
             {patient.currentMedications.map((med, index) => (
               <div key={index} className="current-med-item">
@@ -218,7 +247,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
 
       {/* Medical Conditions & Allergies */}
       <div className="treatment-plan-card">
-        <h3>📋 Medical History</h3>
+        <h3>
+          <ClipboardIcon size={20} /> Medical History
+        </h3>
         <div className="history-grid">
           <div className="history-section">
             <h4>Conditions</h4>
@@ -240,7 +271,7 @@ export default function ClinicalDashboard({ patient, onBack }) {
               {patient.medicalHistory?.allergies?.length > 0 ? (
                 patient.medicalHistory.allergies.map((allergy, index) => (
                   <span key={index} className="history-tag allergy">
-                    ⚠️ {allergy}
+                    <WarningIcon size={12} /> {allergy}
                   </span>
                 ))
               ) : (
@@ -253,7 +284,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
 
       {error && (
         <div className="critical-alerts">
-          <h3>⚠️ Error</h3>
+          <h3>
+            <WarningIcon size={20} /> Error
+          </h3>
           <div className="alert-item major">
             <div className="alert-description">{error}</div>
           </div>
@@ -263,7 +296,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
       {/* Generate Plan Section */}
       {!treatmentPlan && !generating && (
         <div className="generate-section">
-          <h3>🤖 AI Treatment Analysis</h3>
+          <h3>
+            <AIIcon size={20} /> AI Treatment Analysis
+          </h3>
           <p>
             Generate a personalized treatment plan with drug interaction checks,
             contraindication analysis, and evidence-based recommendations.
@@ -277,7 +312,7 @@ export default function ClinicalDashboard({ patient, onBack }) {
       {/* Loading State */}
       {generating && (
         <div className="loading-overlay">
-          <div className="spinner"></div>
+          <LoadingSpinner size="xl" />
           <p className="loading-text">
             Analyzing patient data and generating treatment plan...
           </p>
@@ -296,10 +331,22 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* Status */}
           <div style={{ marginBottom: "1rem" }}>
             <span className={`plan-status ${treatmentPlan.status}`}>
-              {treatmentPlan.status === "pending" && "⏳ Pending Review"}
-              {treatmentPlan.status === "approved" && "✅ Approved"}
-              {treatmentPlan.status === "modified" && "📝 Modified"}
-              {treatmentPlan.status === "rejected" && "❌ Rejected"}
+              {treatmentPlan.status === "pending" && "Pending Review"}
+              {treatmentPlan.status === "approved" && (
+                <>
+                  <CheckIcon size={14} /> Approved
+                </>
+              )}
+              {treatmentPlan.status === "modified" && (
+                <>
+                  <PencilIcon size={14} /> Modified
+                </>
+              )}
+              {treatmentPlan.status === "rejected" && (
+                <>
+                  <CloseIcon size={14} /> Rejected
+                </>
+              )}
             </span>
           </div>
 
@@ -325,7 +372,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* Critical Alerts - SHOW SECOND */}
           {getCriticalAlerts().length > 0 && (
             <div className="critical-alerts">
-              <h3>🚨 Critical Safety Alerts</h3>
+              <h3>
+                <RiskIcon size={20} /> Critical Safety Alerts
+              </h3>
               {getCriticalAlerts().map((alert, index) => (
                 <div key={index} className={`alert-item ${alert.severity}`}>
                   <div className="alert-header">
@@ -337,7 +386,7 @@ export default function ClinicalDashboard({ patient, onBack }) {
                   <div className="alert-description">{alert.description}</div>
                   {alert.recommendation && (
                     <div className="alert-recommendation">
-                      💡 {alert.recommendation}
+                      <InfoIcon size={14} /> {alert.recommendation}
                     </div>
                   )}
                 </div>
@@ -348,7 +397,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* All Drug Interactions */}
           {treatmentPlan.drugInteractions?.length > 0 && (
             <div className="treatment-plan-card">
-              <h3>💊 Drug Interactions</h3>
+              <h3>
+                <MedicationIcon size={20} /> Drug Interactions
+              </h3>
               {treatmentPlan.drugInteractions.map((interaction, index) => (
                 <div
                   key={index}
@@ -367,7 +418,7 @@ export default function ClinicalDashboard({ patient, onBack }) {
                   </div>
                   {interaction.recommendation && (
                     <div className="alert-recommendation">
-                      💡 {interaction.recommendation}
+                      <InfoIcon size={14} /> {interaction.recommendation}
                     </div>
                   )}
                 </div>
@@ -377,7 +428,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
 
           {/* Treatment Plan */}
           <div className="treatment-plan-card">
-            <h3>💉 Recommended Treatment</h3>
+            <h3>
+              <MedicationIcon size={20} /> Recommended Treatment
+            </h3>
 
             {/* Primary Medication */}
             <div className="primary-medication">
@@ -431,7 +484,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
             {/* Lifestyle Recommendations */}
             {treatmentPlan.treatment?.lifestyleRecommendations?.length > 0 && (
               <div className="lifestyle-recommendations">
-                <h4>🏃 Lifestyle Recommendations</h4>
+                <h4>
+                  <ExerciseIcon size={18} /> Lifestyle Recommendations
+                </h4>
                 {treatmentPlan.treatment.lifestyleRecommendations.map(
                   (rec, index) => (
                     <div key={index} className="lifestyle-item">
@@ -460,7 +515,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* Alternatives */}
           {treatmentPlan.alternatives?.length > 0 && (
             <div className="treatment-plan-card">
-              <h3>🔄 Alternative Treatments</h3>
+              <h3>
+                <RefreshIcon size={20} /> Alternative Treatments
+              </h3>
               <div className="alternatives-section">
                 {treatmentPlan.alternatives.map((alt, index) => (
                   <div key={index} className="alternative-item">
@@ -482,7 +539,9 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* Rationale */}
           {treatmentPlan.rationale && (
             <div className="treatment-plan-card">
-              <h3>📋 Clinical Rationale</h3>
+              <h3>
+                <ClipboardIcon size={20} /> Clinical Rationale
+              </h3>
               <div className="rationale-section">
                 <div className="rationale-summary">
                   {treatmentPlan.rationale.summary}
@@ -522,19 +581,19 @@ export default function ClinicalDashboard({ patient, onBack }) {
                 className="action-btn approve"
                 onClick={() => setShowModal("approve")}
               >
-                ✓ Approve Plan
+                <CheckIcon size={16} /> Approve Plan
               </button>
               <button
                 className="action-btn modify"
                 onClick={() => setShowModal("modify")}
               >
-                ✏️ Modify Plan
+                <PencilIcon size={16} /> Modify Plan
               </button>
               <button
                 className="action-btn reject"
                 onClick={() => setShowModal("reject")}
               >
-                ✕ Reject Plan
+                <CloseIcon size={16} /> Reject Plan
               </button>
             </div>
           )}
@@ -542,12 +601,11 @@ export default function ClinicalDashboard({ patient, onBack }) {
           {/* Regenerate Button */}
           <div style={{ textAlign: "center", marginTop: "1rem" }}>
             <button
-              className="generate-btn"
+              className="generate-btn regenerate"
               onClick={handleGeneratePlan}
               disabled={generating}
-              style={{ background: "#8e44ad" }}
             >
-              🔄 Regenerate Plan
+              <RefreshIcon size={16} /> Regenerate Plan
             </button>
           </div>
         </>
@@ -558,9 +616,21 @@ export default function ClinicalDashboard({ patient, onBack }) {
         <div className="modal-overlay" onClick={() => setShowModal(null)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h3>
-              {showModal === "approve" && "✅ Approve Treatment Plan"}
-              {showModal === "reject" && "❌ Reject Treatment Plan"}
-              {showModal === "modify" && "✏️ Modify Treatment Plan"}
+              {showModal === "approve" && (
+                <>
+                  <SuccessIcon size={20} /> Approve Treatment Plan
+                </>
+              )}
+              {showModal === "reject" && (
+                <>
+                  <ErrorIcon size={20} /> Reject Treatment Plan
+                </>
+              )}
+              {showModal === "modify" && (
+                <>
+                  <PencilIcon size={20} /> Modify Treatment Plan
+                </>
+              )}
             </h3>
             <div className="modal-form">
               <div>
@@ -621,9 +691,21 @@ export default function ClinicalDashboard({ patient, onBack }) {
                   }}
                   disabled={!reviewedBy.trim()}
                 >
-                  {showModal === "approve" && "✓ Approve"}
-                  {showModal === "reject" && "✕ Reject"}
-                  {showModal === "modify" && "✓ Save Modifications"}
+                  {showModal === "approve" && (
+                    <>
+                      <CheckIcon size={14} /> Approve
+                    </>
+                  )}
+                  {showModal === "reject" && (
+                    <>
+                      <CloseIcon size={14} /> Reject
+                    </>
+                  )}
+                  {showModal === "modify" && (
+                    <>
+                      <CheckIcon size={14} /> Save Modifications
+                    </>
+                  )}
                 </button>
               </div>
             </div>

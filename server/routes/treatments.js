@@ -79,13 +79,71 @@ router.post("/generate/:patientId", async (req, res) => {
   }
 });
 
-// GET - Get all treatment plans
+// GET - Get all treatment plans (with pagination and filtering)
 router.get("/", async (req, res) => {
   try {
-    const plans = await TreatmentPlan.find()
-      .populate("patientId", "firstName lastName primaryComplaint")
-      .sort({ createdAt: -1 });
-    res.json(plans);
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      patientId,
+      riskLevel,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+      summary = "false", // Return summary view by default when 'true'
+    } = req.query;
+
+    const pageNum = Math.max(1, parseInt(page));
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit)));
+    const skip = (pageNum - 1) * limitNum;
+
+    // Build query filter
+    const filter = {};
+    if (status) filter.status = status;
+    if (patientId) filter.patientId = patientId;
+    if (riskLevel) filter["safetyAssessment.overallRiskLevel"] = riskLevel;
+
+    // Build sort
+    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
+
+    // Summary projection for list view (lighter payload)
+    const summaryProjection =
+      summary === "true"
+        ? {
+            patientId: 1,
+            status: 1,
+            workflowStep: 1,
+            "treatment.primaryMedication.name": 1,
+            "treatment.primaryMedication.dosage": 1,
+            "safetyAssessment.overallRiskLevel": 1,
+            "safetyAssessment.riskScore": 1,
+            createdAt: 1,
+            reviewedAt: 1,
+            reviewedBy: 1,
+          }
+        : null;
+
+    // Execute query with pagination
+    const [plans, total] = await Promise.all([
+      TreatmentPlan.find(filter, summaryProjection)
+        .populate("patientId", "firstName lastName primaryComplaint")
+        .sort(sort)
+        .skip(skip)
+        .limit(limitNum)
+        .lean(),
+      TreatmentPlan.countDocuments(filter),
+    ]);
+
+    res.json({
+      data: plans,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        totalPages: Math.ceil(total / limitNum),
+        hasMore: skip + plans.length < total,
+      },
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -94,9 +152,29 @@ router.get("/", async (req, res) => {
 // GET - Get treatment plans for a specific patient (MUST be before /:id)
 router.get("/patient/:patientId", async (req, res) => {
   try {
-    const plans = await TreatmentPlan.find({
-      patientId: req.params.patientId,
-    }).sort({ createdAt: -1 });
+    const { summary = "false" } = req.query;
+
+    // Summary projection for list view
+    const summaryProjection =
+      summary === "true"
+        ? {
+            status: 1,
+            workflowStep: 1,
+            "treatment.primaryMedication.name": 1,
+            "treatment.primaryMedication.dosage": 1,
+            "safetyAssessment.overallRiskLevel": 1,
+            createdAt: 1,
+            reviewedAt: 1,
+          }
+        : null;
+
+    const plans = await TreatmentPlan.find(
+      { patientId: req.params.patientId },
+      summaryProjection
+    )
+      .sort({ createdAt: -1 })
+      .lean();
+
     res.json(plans);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -162,9 +240,9 @@ router.get("/:id/full-details", async (req, res) => {
 // GET - Get treatment plan by ID (generic - MUST be after specific routes)
 router.get("/:id", async (req, res) => {
   try {
-    const plan = await TreatmentPlan.findById(req.params.id).populate(
-      "patientId"
-    );
+    const plan = await TreatmentPlan.findById(req.params.id)
+      .populate("patientId")
+      .lean();
     if (!plan) {
       return res.status(404).json({ message: "Treatment plan not found" });
     }

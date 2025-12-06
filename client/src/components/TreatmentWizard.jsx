@@ -2,13 +2,59 @@ import { useState, useEffect, useRef } from "react";
 import { treatmentAPI, auditAPI } from "../api/patientAPI";
 import { QRCodeSVG } from "qrcode.react";
 import QRCode from "qrcode";
+import {
+  ClipboardIcon,
+  AIIcon,
+  TreatmentIcon,
+  SuccessIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+  RefreshIcon,
+  CheckIcon,
+  CloseIcon,
+  WarningIcon,
+  MedicationIcon,
+  AlertIcon,
+  PencilIcon,
+  SaveIcon,
+  TrashIcon,
+  PlusIcon,
+  PrinterIcon,
+  HistoryIcon,
+  RiskIcon,
+  SafeIcon,
+  PatientIcon,
+  HeartPulseIcon,
+  BrainIcon,
+  InfoIcon,
+  StarIcon,
+  CalendarIcon,
+  DurationIcon,
+  ChartIcon,
+  ShieldIcon,
+  LabIcon,
+  DocumentIcon,
+  BookmarkIcon,
+  QuickIcon,
+  LinkIcon,
+  BadgeCheckIcon,
+  CircleCheckIcon,
+  ShareIcon,
+} from "./Icons";
+import LoadingSpinner, { ButtonLoader } from "./LoadingSpinner";
+import DrugAutocomplete from "./DrugAutocomplete";
+import AlertModal from "./AlertModal";
+import AIGenerationOverlay, {
+  RegenerateConfirmModal,
+} from "./AIGenerationOverlay";
+import "./LoadingSpinner.css";
 import "./TreatmentWizard.css";
 
 const STEPS = [
-  { id: "intake", label: "Patient Intake", icon: "📋" },
-  { id: "analysis", label: "AI Analysis", icon: "🤖" },
-  { id: "review", label: "Doctor Review", icon: "👨‍⚕️" },
-  { id: "finalized", label: "Final Summary", icon: "✅" },
+  { id: "intake", label: "Patient Intake", Icon: ClipboardIcon },
+  { id: "analysis", label: "AI Analysis", Icon: AIIcon },
+  { id: "review", label: "Doctor Review", Icon: TreatmentIcon },
+  { id: "finalized", label: "Final Summary", Icon: SuccessIcon },
 ];
 
 export default function TreatmentWizard({
@@ -36,6 +82,36 @@ export default function TreatmentWizard({
   const [editableMedications, setEditableMedications] = useState([]);
   const [medicationsInitialized, setMedicationsInitialized] = useState(false);
 
+  // Collapsible sections state for analysis view
+  const [expandedSections, setExpandedSections] = useState({
+    interactions: true,
+    treatment: true,
+    alternatives: false,
+    rationale: false,
+  });
+
+  // Alert modal state
+  const [alertModal, setAlertModal] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    type: "error",
+  });
+
+  // Regeneration confirmation modal state
+  const [showRegenerateConfirm, setShowRegenerateConfirm] = useState(false);
+
+  // Generation error state (for overlay)
+  const [generationError, setGenerationError] = useState(null);
+
+  // Toggle section expansion
+  const toggleSection = (section) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
   // Ref for print content
   const printContentRef = useRef(null);
 
@@ -58,7 +134,13 @@ export default function TreatmentWizard({
         setDetailedData(response.data);
       } catch (err) {
         console.error("Error fetching details for print:", err);
-        alert("Failed to load treatment details for printing");
+        setAlertModal({
+          isOpen: true,
+          title: "Loading Failed",
+          message:
+            "Failed to load treatment details for printing. Please try again.",
+          type: "error",
+        });
         return;
       }
     }
@@ -81,7 +163,13 @@ export default function TreatmentWizard({
 
     const printWindow = window.open("", "_blank");
     if (!printWindow) {
-      alert("Please allow popups to print the analysis");
+      setAlertModal({
+        isOpen: true,
+        title: "Popups Blocked",
+        message:
+          "Please allow popups in your browser settings to print the analysis.",
+        type: "warning",
+      });
       return;
     }
 
@@ -268,16 +356,16 @@ export default function TreatmentWizard({
         </div>
 
         <div class="risk-banner risk-${riskLevel}">
-          <div class="risk-icon">${
+          <div class="risk-icon" style="font-weight:bold;font-size:18px;">${
             riskLevel === "critical"
-              ? "🔴"
+              ? "!!"
               : riskLevel === "high"
-              ? "🟠"
+              ? "!"
               : riskLevel === "moderate"
-              ? "🟡"
+              ? "~"
               : riskLevel === "low"
-              ? "🟢"
-              : "⚪"
+              ? "✓"
+              : "-"
           }</div>
           <div class="risk-text">
             <h2>Risk Level: ${riskLevel.toUpperCase()}</h2>
@@ -306,7 +394,7 @@ export default function TreatmentWizard({
         </div>
 
         <div class="section section-primary">
-          <h3>💊 Primary Medication</h3>
+          <h3>Primary Medication</h3>
           ${
             treatment?.primaryMedication
               ? `
@@ -373,7 +461,7 @@ export default function TreatmentWizard({
           treatmentPlan?.analysis?.drugInteractions?.length > 0
             ? `
           <div class="section section-warning">
-            <h3>⚠️ Drug Interactions</h3>
+            <h3><WarningIcon size={18} /> Drug Interactions</h3>
             ${(
               currentDetailedData?.currentPlan?.drugInteractions ||
               treatmentPlan?.analysis?.drugInteractions ||
@@ -437,7 +525,7 @@ export default function TreatmentWizard({
         }
 
         <div class="section">
-          <h3>📝 Clinical Rationale</h3>
+          <h3><InfoIcon size={18} /> Clinical Rationale</h3>
           ${(() => {
             const rationale =
               currentDetailedData?.currentPlan?.rationale ||
@@ -473,7 +561,7 @@ export default function TreatmentWizard({
           treatmentPlan?.analysis?.alternatives?.length > 0
             ? `
           <div class="section">
-            <h3>🔄 Alternative Treatments</h3>
+            <h3>Alternative Treatments</h3>
             ${(
               currentDetailedData?.currentPlan?.alternatives ||
               treatmentPlan?.analysis?.alternatives ||
@@ -531,7 +619,7 @@ export default function TreatmentWizard({
         </div>
 
         <div class="footer">
-          <p>⚕️ AI-Generated Treatment Plan - Must be verified by qualified medical professional</p>
+          <p>AI-Generated Treatment Plan - Must be verified by qualified medical professional</p>
           <p>Generated by Clinical Assistant System | ${new Date().toISOString()}</p>
           <p>Document ID: ${treatmentPlan?._id || "N/A"}</p>
         </div>
@@ -657,17 +745,19 @@ export default function TreatmentWizard({
     }
   };
 
-  // Regenerate treatment plan
-  const handleRegenerate = async () => {
+  // Show regenerate confirmation modal
+  const handleRegenerate = () => {
     if (!treatmentPlan) return;
+    setShowRegenerateConfirm(true);
+  };
 
-    const confirmed = window.confirm(
-      "This will re-run the AI analysis with current patient data. The existing plan will be replaced. Continue?"
-    );
-    if (!confirmed) return;
+  // Actually perform the regeneration after confirmation
+  const confirmRegenerate = async () => {
+    setShowRegenerateConfirm(false);
 
     try {
       setRegenerating(true);
+      setGenerationError(null);
       setError(null);
       const response = await treatmentAPI.regenerate(treatmentPlan._id, {
         requestedBy: reviewedBy || "Physician",
@@ -680,9 +770,10 @@ export default function TreatmentWizard({
       fetchAuditLog(response.data._id);
       setShowDetailedView(false);
     } catch (err) {
-      setError(
-        err.response?.data?.message || "Failed to regenerate treatment plan"
-      );
+      const errorMsg =
+        err.response?.data?.message || "Failed to regenerate treatment plan";
+      setGenerationError(errorMsg);
+      setError(errorMsg);
     } finally {
       setRegenerating(false);
     }
@@ -733,16 +824,18 @@ export default function TreatmentWizard({
   const handleGeneratePlan = async () => {
     try {
       setGenerating(true);
+      setGenerationError(null);
       setError(null);
       const response = await treatmentAPI.generate(patient._id);
       setTreatmentPlan(response.data);
       setCurrentStep(1); // Move to analysis step
       fetchAuditLog(response.data._id);
     } catch (err) {
-      setError(
+      const errorMsg =
         err.response?.data?.message ||
-          "Failed to generate treatment plan. Please check your API key."
-      );
+        "Failed to generate treatment plan. Please check your API key.";
+      setGenerationError(errorMsg);
+      setError(errorMsg);
     } finally {
       setGenerating(false);
     }
@@ -1029,15 +1122,15 @@ export default function TreatmentWizard({
   const getRiskIcon = (level) => {
     switch (level) {
       case "low":
-        return "✅";
+        return <SuccessIcon size={24} />;
       case "medium":
-        return "⚠️";
+        return <WarningIcon size={24} />;
       case "high":
-        return "🔴";
+        return <RiskIcon size={24} />;
       case "critical":
-        return "🚨";
+        return <AlertIcon size={24} />;
       default:
-        return "❓";
+        return <InfoIcon size={24} />;
     }
   };
 
@@ -1051,7 +1144,9 @@ export default function TreatmentWizard({
             index < currentStep ? "completed" : ""
           }`}
         >
-          <div className="step-icon">{step.icon}</div>
+          <div className="step-icon">
+            <step.Icon size={20} />
+          </div>
           <div className="step-label">{step.label}</div>
           {index < STEPS.length - 1 && <div className="step-connector" />}
         </div>
@@ -1066,7 +1161,9 @@ export default function TreatmentWizard({
 
       <div className="intake-grid">
         <div className="intake-section">
-          <h3>👤 Demographics</h3>
+          <h3>
+            <PatientIcon size={18} /> Demographics
+          </h3>
           <div className="intake-details">
             <p>
               <strong>Name:</strong> {patient.firstName} {patient.lastName}
@@ -1085,7 +1182,9 @@ export default function TreatmentWizard({
         </div>
 
         <div className="intake-section">
-          <h3>🩺 Primary Complaint</h3>
+          <h3>
+            <TreatmentIcon size={18} /> Primary Complaint
+          </h3>
           <div className="intake-details">
             <p>
               <strong>Condition:</strong>{" "}
@@ -1103,7 +1202,9 @@ export default function TreatmentWizard({
         </div>
 
         <div className="intake-section">
-          <h3>💊 Current Medications</h3>
+          <h3>
+            <MedicationIcon size={18} /> Current Medications
+          </h3>
           <div className="medication-list">
             {patient.currentMedications?.length > 0 ? (
               patient.currentMedications.map((med, idx) => (
@@ -1121,7 +1222,9 @@ export default function TreatmentWizard({
         </div>
 
         <div className="intake-section">
-          <h3>📋 Medical History</h3>
+          <h3>
+            <ClipboardIcon size={18} /> Medical History
+          </h3>
           <div className="intake-details">
             <p>
               <strong>Conditions:</strong>
@@ -1139,7 +1242,7 @@ export default function TreatmentWizard({
             <div className="tag-list">
               {patient.medicalHistory?.allergies?.map((a, idx) => (
                 <span key={idx} className="tag allergy">
-                  ⚠️ {a}
+                  <WarningIcon size={14} /> {a}
                 </span>
               )) || <span className="no-data">None</span>}
             </div>
@@ -1149,250 +1252,626 @@ export default function TreatmentWizard({
 
       <div className="step-actions">
         <button className="btn-secondary" onClick={onBack}>
-          ← Back to Patients
+          <ChevronLeftIcon size={18} />
+          Back to Patients
         </button>
         <button
-          className="btn-primary"
+          className="btn-primary generate-btn"
           onClick={handleGeneratePlan}
-          disabled={generating}
+          disabled={generating || regenerating}
         >
-          {generating ? (
-            <>
-              <span className="spinner-small"></span>
-              Generating...
-            </>
-          ) : (
-            "Generate AI Treatment Plan →"
-          )}
+          <AIIcon size={18} />
+          Generate AI Treatment Plan
+          <ChevronRightIcon size={18} />
         </button>
       </div>
     </div>
   );
 
   // Step 1: AI Analysis
-  const renderAnalysisStep = () => (
-    <div className="wizard-content analysis-step">
-      <h2>AI Treatment Analysis</h2>
+  const renderAnalysisStep = () => {
+    const riskLevel =
+      treatmentPlan?.safetyAssessment?.overallRiskLevel || "low";
+    const safetyScore = 100 - (treatmentPlan?.safetyAssessment?.riskScore || 0);
+    const confidenceScore = treatmentPlan?.rationale?.overallConfidence || 75;
+    const interactionCount = treatmentPlan?.drugInteractions?.length || 0;
+    const alternativeCount = treatmentPlan?.alternatives?.length || 0;
 
-      {treatmentPlan && (
-        <>
-          {/* Risk Assessment */}
-          <div
-            className={`risk-banner ${treatmentPlan.safetyAssessment?.overallRiskLevel}`}
-          >
-            <div className="risk-icon">
-              {getRiskIcon(treatmentPlan.safetyAssessment?.overallRiskLevel)}
-            </div>
-            <div className="risk-info">
-              <h3>
-                Risk Level:{" "}
-                {treatmentPlan.safetyAssessment?.overallRiskLevel?.toUpperCase()}
-              </h3>
-              <p>Risk Score: {treatmentPlan.safetyAssessment?.riskScore}/100</p>
-            </div>
-            <div
-              className="confidence-badge"
-              style={{
-                backgroundColor: getConfidenceColor(
-                  treatmentPlan.rationale?.overallConfidence || 75
-                ),
-              }}
-            >
-              <span>
-                {getConfidenceLabel(
-                  treatmentPlan.rationale?.overallConfidence || 75
-                )}{" "}
-                Confidence
-              </span>
-              <span>{treatmentPlan.rationale?.overallConfidence || 75}%</span>
-            </div>
-          </div>
+    return (
+      <div className="wizard-content analysis-step">
+        <h2>
+          <BrainIcon size={24} />
+          AI Treatment Analysis
+        </h2>
 
-          {/* Validation Status */}
-          {treatmentPlan.validation && (
-            <div className="validation-status">
-              <h4>
-                {treatmentPlan.validation.schemaValid ? "✅" : "⚠️"}
-                Schema Validation:{" "}
-                {treatmentPlan.validation.schemaValid
-                  ? "Passed"
-                  : "Issues Found"}
-              </h4>
-              {treatmentPlan.validation.databaseCrossCheck?.performed && (
-                <div className="crosscheck-info">
-                  <span>🔍 Database Cross-Check:</span>
-                  <span className="verified">
-                    {
-                      treatmentPlan.validation.databaseCrossCheck
-                        .interactionsVerified
-                    }{" "}
-                    verified
-                  </span>
-                  <span className="unverified">
-                    {
-                      treatmentPlan.validation.databaseCrossCheck
-                        .interactionsUnverified
-                    }{" "}
-                    AI-only
-                  </span>
-                  <span className="db-only">
-                    {
-                      treatmentPlan.validation.databaseCrossCheck
-                        .databaseOnlyFindings
-                    }{" "}
-                    DB-only
-                  </span>
+        {!treatmentPlan && (
+          <div className="empty-analysis-improved">
+            <div className="empty-illustration">
+              <div className="brain-animation">
+                <span className="brain-emoji">
+                  <BrainIcon size={48} />
+                </span>
+                <div className="pulse-rings">
+                  <div className="ring ring-1"></div>
+                  <div className="ring ring-2"></div>
+                  <div className="ring ring-3"></div>
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Drug Interactions */}
-          {treatmentPlan.drugInteractions?.length > 0 && (
-            <div className="analysis-section interactions">
-              <h3>⚠️ Drug Interactions</h3>
-              <div className="interaction-list">
-                {treatmentPlan.drugInteractions.map((int, idx) => (
-                  <div key={idx} className={`interaction-item ${int.severity}`}>
-                    <div className="interaction-header">
-                      <span className="drug-pair">
-                        {int.drug1} + {int.drug2}
-                      </span>
-                      <span className={`severity-badge ${int.severity}`}>
-                        {int.severity}
-                      </span>
-                      {int.verifiedByDatabase && (
-                        <span className="verified-badge">✓ Verified</span>
-                      )}
-                    </div>
-                    <p>{int.description}</p>
-                    <p className="recommendation">
-                      <strong>Recommendation:</strong> {int.recommendation}
-                    </p>
-                    {int.confidence && (
-                      <div className="confidence-bar">
-                        <div
-                          className="confidence-fill"
-                          style={{
-                            width: `${int.confidence}%`,
-                            backgroundColor: getConfidenceColor(int.confidence),
-                          }}
-                        />
-                        <span>{int.confidence}% confidence</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
               </div>
             </div>
-          )}
+            <h3>Ready for AI Analysis</h3>
+            <p className="empty-description">
+              Complete the patient intake form and generate an AI-powered
+              treatment recommendation.
+            </p>
+            <div className="empty-features">
+              <div className="feature-item">
+                <span className="feature-icon">
+                  <LinkIcon size={20} />
+                </span>
+                <span>Drug interaction screening</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-icon">
+                  <QuickIcon size={20} />
+                </span>
+                <span>Evidence-based recommendations</span>
+              </div>
+              <div className="feature-item">
+                <span className="feature-icon">
+                  <ShieldIcon size={20} />
+                </span>
+                <span>Safety risk assessment</span>
+              </div>
+            </div>
+            <button
+              className="btn-back-intake"
+              onClick={() => setCurrentStep(0)}
+            >
+              <ChevronLeftIcon size={16} /> Go to Patient Intake
+            </button>
+          </div>
+        )}
 
-          {/* Recommended Treatment */}
-          <div className="analysis-section treatment">
-            <h3>💊 Recommended Treatment</h3>
-            <div className="treatment-card">
-              <div className="primary-med">
-                <h4>Primary Medication</h4>
-                <div className="med-details">
-                  <span className="med-name">
-                    {treatmentPlan.treatment?.primaryMedication?.name}
-                  </span>
-                  <span>
-                    {treatmentPlan.treatment?.primaryMedication?.dosage}
-                  </span>
-                  <span>
-                    {treatmentPlan.treatment?.primaryMedication?.frequency}
-                  </span>
-                  <span>
-                    {treatmentPlan.treatment?.primaryMedication?.duration}
+        {treatmentPlan && (
+          <>
+            {/* Quick Insights Dashboard */}
+            <div className="insights-dashboard">
+              <div className={`insight-card risk-card ${riskLevel}`}>
+                <div className="insight-icon">{getRiskIcon(riskLevel)}</div>
+                <div className="insight-content">
+                  <span className="insight-label">Risk Level</span>
+                  <span className="insight-value">
+                    {riskLevel?.toUpperCase()}
                   </span>
                 </div>
-                {treatmentPlan.treatment?.primaryMedication?.confidence && (
-                  <div className="confidence-indicator">
-                    <span
-                      style={{
-                        color: getConfidenceColor(
-                          treatmentPlan.treatment.primaryMedication.confidence
-                        ),
-                      }}
-                    >
-                      {getConfidenceLabel(
-                        treatmentPlan.treatment.primaryMedication.confidence
-                      )}{" "}
-                      Confidence (
-                      {treatmentPlan.treatment.primaryMedication.confidence}%)
-                    </span>
+                <div className="insight-indicator">
+                  <div className={`status-dot ${riskLevel}`}></div>
+                </div>
+              </div>
+
+              <div className="insight-card safety-card">
+                <div className="insight-icon">
+                  <SafeIcon size={28} />
+                </div>
+                <div className="insight-content">
+                  <span className="insight-label">Safety Score</span>
+                  <span className="insight-value">{safetyScore}/100</span>
+                </div>
+                <div className="insight-progress">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${safetyScore}%`,
+                      backgroundColor:
+                        safetyScore >= 75
+                          ? "#22c55e"
+                          : safetyScore >= 50
+                          ? "#f59e0b"
+                          : "#ef4444",
+                    }}
+                  ></div>
+                </div>
+              </div>
+
+              <div className="insight-card confidence-card">
+                <div className="insight-icon">
+                  <ChartIcon size={28} />
+                </div>
+                <div className="insight-content">
+                  <span className="insight-label">AI Confidence</span>
+                  <span className="insight-value">{confidenceScore}%</span>
+                </div>
+                <div
+                  className="insight-badge"
+                  style={{ color: getConfidenceColor(confidenceScore) }}
+                >
+                  {getConfidenceLabel(confidenceScore)}
+                </div>
+              </div>
+
+              <div className="insight-card interactions-card">
+                <div className="insight-icon">
+                  {interactionCount > 0 ? (
+                    <WarningIcon size={28} />
+                  ) : (
+                    <SuccessIcon size={28} />
+                  )}
+                </div>
+                <div className="insight-content">
+                  <span className="insight-label">Interactions</span>
+                  <span className="insight-value">
+                    {interactionCount > 0
+                      ? `${interactionCount} Found`
+                      : "None"}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Validation Status Banner */}
+            {treatmentPlan.validation && (
+              <div
+                className={`validation-banner ${
+                  treatmentPlan.validation.schemaValid ? "valid" : "warning"
+                }`}
+              >
+                <div className="validation-main">
+                  {treatmentPlan.validation.schemaValid ? (
+                    <SuccessIcon size={20} />
+                  ) : (
+                    <WarningIcon size={20} />
+                  )}
+                  <span className="validation-text">
+                    {treatmentPlan.validation.schemaValid
+                      ? "All validation checks passed"
+                      : "Some items require your attention"}
+                  </span>
+                </div>
+                {treatmentPlan.validation.databaseCrossCheck?.performed && (
+                  <div className="validation-details">
+                    <div className="check-item verified">
+                      <CheckIcon size={14} />
+                      <span>
+                        {treatmentPlan.validation.databaseCrossCheck
+                          .interactionsVerified || 0}{" "}
+                        DB Verified
+                      </span>
+                    </div>
+                    <div className="check-item ai-only">
+                      <BrainIcon size={14} />
+                      <span>
+                        {treatmentPlan.validation.databaseCrossCheck
+                          .interactionsUnverified || 0}{" "}
+                        AI-Only
+                      </span>
+                    </div>
+                    <div className="check-item db-only">
+                      <InfoIcon size={14} />
+                      <span>
+                        {treatmentPlan.validation.databaseCrossCheck
+                          .databaseOnlyFindings || 0}{" "}
+                        DB-Only
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
-          </div>
+            )}
 
-          {/* Alternative Treatments */}
-          {treatmentPlan.alternatives?.length > 0 && (
-            <div className="analysis-section alternatives">
-              <h3>🔄 Alternative Treatment Options</h3>
-              <div className="alternatives-grid">
-                {treatmentPlan.alternatives.map((alt, idx) => (
-                  <div key={idx} className="alternative-card">
-                    <div className="alt-header">
-                      <span className="alt-name">{alt.medication}</span>
-                      <span className="suitability-score">
-                        {alt.suitabilityScore}% suitable
-                      </span>
-                    </div>
-                    {alt.dosage && <p className="alt-dosage">{alt.dosage}</p>}
-                    <p className="alt-reason">{alt.reason}</p>
-                    {alt.confidence && (
-                      <div className="confidence-bar small">
+            {/* Drug Interactions Section - Collapsible */}
+            <div className="analysis-section-collapsible">
+              <button
+                className={`section-header ${
+                  interactionCount > 0 ? "has-warnings" : "all-clear"
+                }`}
+                onClick={() => toggleSection("interactions")}
+              >
+                <div className="section-title">
+                  {interactionCount > 0 ? (
+                    <WarningIcon size={20} />
+                  ) : (
+                    <SuccessIcon size={20} />
+                  )}
+                  <span>Drug Interactions</span>
+                  {interactionCount > 0 && (
+                    <span className="count-badge warning">
+                      {interactionCount}
+                    </span>
+                  )}
+                </div>
+                <div className="section-toggle">
+                  <ChevronRightIcon
+                    size={20}
+                    style={{
+                      transform: expandedSections.interactions
+                        ? "rotate(90deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.2s ease",
+                    }}
+                  />
+                </div>
+              </button>
+
+              {expandedSections.interactions && (
+                <div className="section-content">
+                  {interactionCount > 0 ? (
+                    <div className="interaction-list-improved">
+                      {treatmentPlan.drugInteractions.map((int, idx) => (
                         <div
-                          className="confidence-fill"
+                          key={idx}
+                          className={`interaction-card ${int.severity}`}
+                        >
+                          <div className="interaction-top">
+                            <div className="drug-pair-visual">
+                              <span className="drug-name">{int.drug1}</span>
+                              <span className="interaction-arrow">
+                                <LinkIcon size={16} />
+                              </span>
+                              <span className="drug-name">{int.drug2}</span>
+                            </div>
+                            <div className="severity-wrapper">
+                              <span className={`severity-pill ${int.severity}`}>
+                                {int.severity === "critical" && (
+                                  <AlertIcon
+                                    size={14}
+                                    className="severity-icon"
+                                  />
+                                )}
+                                {int.severity === "severe" && (
+                                  <WarningIcon
+                                    size={14}
+                                    className="severity-icon"
+                                  />
+                                )}
+                                {int.severity === "moderate" && (
+                                  <InfoIcon
+                                    size={14}
+                                    className="severity-icon"
+                                  />
+                                )}
+                                {int.severity?.toUpperCase()}
+                              </span>
+                              {int.verifiedByDatabase && (
+                                <span className="verified-tag">
+                                  <CheckIcon size={12} /> Verified
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <p className="interaction-description">
+                            {int.description}
+                          </p>
+                          <div className="interaction-recommendation">
+                            <span className="rec-icon">
+                              <QuickIcon size={18} />
+                            </span>
+                            <span className="rec-text">
+                              {int.recommendation}
+                            </span>
+                          </div>
+                          {int.confidence && (
+                            <div className="confidence-meter">
+                              <div className="meter-track">
+                                <div
+                                  className="meter-fill"
+                                  style={{
+                                    width: `${int.confidence}%`,
+                                    backgroundColor: getConfidenceColor(
+                                      int.confidence
+                                    ),
+                                  }}
+                                />
+                              </div>
+                              <span className="meter-label">
+                                {int.confidence}% confidence
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="no-interactions-message">
+                      <div className="success-icon-large">
+                        <CircleCheckIcon size={48} />
+                      </div>
+                      <h4>No Drug Interactions Detected</h4>
+                      <p>
+                        The AI analysis found no significant drug interactions
+                        between current medications and the proposed treatment.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Recommended Treatment Section - Collapsible */}
+            <div className="analysis-section-collapsible">
+              <button
+                className="section-header treatment-header"
+                onClick={() => toggleSection("treatment")}
+              >
+                <div className="section-title">
+                  <MedicationIcon size={20} />
+                  <span>Recommended Treatment</span>
+                  <span className="count-badge primary">Primary</span>
+                </div>
+                <div className="section-toggle">
+                  <ChevronRightIcon
+                    size={20}
+                    style={{
+                      transform: expandedSections.treatment
+                        ? "rotate(90deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.2s ease",
+                    }}
+                  />
+                </div>
+              </button>
+
+              {expandedSections.treatment && (
+                <div className="section-content">
+                  <div className="treatment-card-improved">
+                    <div className="treatment-header-row">
+                      <div className="med-badge">
+                        <StarIcon size={14} /> PRIMARY
+                      </div>
+                      {treatmentPlan.treatment?.primaryMedication
+                        ?.confidence && (
+                        <div
+                          className="confidence-tag"
                           style={{
-                            width: `${alt.confidence}%`,
-                            backgroundColor: getConfidenceColor(alt.confidence),
+                            color: getConfidenceColor(
+                              treatmentPlan.treatment.primaryMedication
+                                .confidence
+                            ),
                           }}
-                        />
+                        >
+                          {getConfidenceLabel(
+                            treatmentPlan.treatment.primaryMedication.confidence
+                          )}{" "}
+                          (
+                          {treatmentPlan.treatment.primaryMedication.confidence}
+                          %)
+                        </div>
+                      )}
+                    </div>
+                    <h4 className="medication-name">
+                      {treatmentPlan.treatment?.primaryMedication?.name ||
+                        "Not specified"}
+                    </h4>
+                    <div className="prescription-grid">
+                      <div className="prescription-item">
+                        <span className="rx-label">
+                          <MedicationIcon size={14} /> Dosage
+                        </span>
+                        <span className="rx-value">
+                          {treatmentPlan.treatment?.primaryMedication?.dosage ||
+                            "N/A"}
+                        </span>
+                      </div>
+                      <div className="prescription-item">
+                        <span className="rx-label">
+                          <DurationIcon size={14} /> Frequency
+                        </span>
+                        <span className="rx-value">
+                          {treatmentPlan.treatment?.primaryMedication
+                            ?.frequency || "N/A"}
+                        </span>
+                      </div>
+                      <div className="prescription-item">
+                        <span className="rx-label">
+                          <CalendarIcon size={14} /> Duration
+                        </span>
+                        <span className="rx-value">
+                          {treatmentPlan.treatment?.primaryMedication
+                            ?.duration || "N/A"}
+                        </span>
+                      </div>
+                      {treatmentPlan.treatment?.primaryMedication
+                        ?.instructions && (
+                        <div className="prescription-item full-width">
+                          <span className="rx-label">
+                            <ClipboardIcon size={14} /> Instructions
+                          </span>
+                          <span className="rx-value">
+                            {
+                              treatmentPlan.treatment.primaryMedication
+                                .instructions
+                            }
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Alternative Treatments Section - Collapsible */}
+            {alternativeCount > 0 && (
+              <div className="analysis-section-collapsible">
+                <button
+                  className="section-header alternatives-header"
+                  onClick={() => toggleSection("alternatives")}
+                >
+                  <div className="section-title">
+                    <RefreshIcon size={20} />
+                    <span>Alternative Options</span>
+                    <span className="count-badge info">
+                      {alternativeCount} available
+                    </span>
+                  </div>
+                  <div className="section-toggle">
+                    <ChevronRightIcon
+                      size={20}
+                      style={{
+                        transform: expandedSections.alternatives
+                          ? "rotate(90deg)"
+                          : "rotate(0deg)",
+                        transition: "transform 0.2s ease",
+                      }}
+                    />
+                  </div>
+                </button>
+
+                {expandedSections.alternatives && (
+                  <div className="section-content">
+                    <div className="alternatives-grid-improved">
+                      {treatmentPlan.alternatives.map((alt, idx) => (
+                        <div key={idx} className="alternative-card-improved">
+                          <div className="alt-rank">
+                            {idx === 0 && (
+                              <span className="rank-badge gold">
+                                <StarIcon size={20} />
+                              </span>
+                            )}
+                            {idx === 1 && (
+                              <span className="rank-badge silver">
+                                <StarIcon size={20} />
+                              </span>
+                            )}
+                            {idx === 2 && (
+                              <span className="rank-badge bronze">
+                                <StarIcon size={20} />
+                              </span>
+                            )}
+                            {idx > 2 && (
+                              <span className="rank-badge">#{idx + 1}</span>
+                            )}
+                          </div>
+                          <div className="alt-content">
+                            <h5 className="alt-medication">{alt.medication}</h5>
+                            {alt.dosage && (
+                              <p className="alt-dosage">{alt.dosage}</p>
+                            )}
+                            <p className="alt-reason">{alt.reason}</p>
+                          </div>
+                          <div className="alt-score">
+                            <div className="score-circle">
+                              <span className="score-value">
+                                {alt.suitabilityScore || 80}
+                              </span>
+                              <span className="score-label">match</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Clinical Rationale Section - Collapsible */}
+            <div className="analysis-section-collapsible">
+              <button
+                className="section-header rationale-header"
+                onClick={() => toggleSection("rationale")}
+              >
+                <div className="section-title">
+                  <InfoIcon size={20} />
+                  <span>Clinical Rationale & Evidence</span>
+                </div>
+                <div className="section-toggle">
+                  <ChevronRightIcon
+                    size={20}
+                    style={{
+                      transform: expandedSections.rationale
+                        ? "rotate(90deg)"
+                        : "rotate(0deg)",
+                      transition: "transform 0.2s ease",
+                    }}
+                  />
+                </div>
+              </button>
+
+              {expandedSections.rationale && (
+                <div className="section-content">
+                  <div className="rationale-content-improved">
+                    {treatmentPlan.rationale?.summary && (
+                      <div className="rationale-block">
+                        <div className="rationale-icon">
+                          <DocumentIcon size={20} />
+                        </div>
+                        <div className="rationale-text">
+                          <h5>Summary</h5>
+                          <p>{treatmentPlan.rationale.summary}</p>
+                        </div>
                       </div>
                     )}
+                    {treatmentPlan.rationale?.clinicalReasoning && (
+                      <div className="rationale-block">
+                        <div className="rationale-icon">
+                          <LabIcon size={20} />
+                        </div>
+                        <div className="rationale-text">
+                          <h5>Clinical Reasoning</h5>
+                          <p>{treatmentPlan.rationale.clinicalReasoning}</p>
+                        </div>
+                      </div>
+                    )}
+                    {treatmentPlan.rationale?.evidenceBasis && (
+                      <div className="rationale-block">
+                        <div className="rationale-icon">
+                          <BookmarkIcon size={20} />
+                        </div>
+                        <div className="rationale-text">
+                          <h5>Evidence Basis</h5>
+                          <p>{treatmentPlan.rationale.evidenceBasis}</p>
+                        </div>
+                      </div>
+                    )}
+                    {!treatmentPlan.rationale?.summary &&
+                      !treatmentPlan.rationale?.clinicalReasoning &&
+                      !treatmentPlan.rationale?.evidenceBasis && (
+                        <p className="no-rationale">
+                          No detailed rationale provided for this
+                          recommendation.
+                        </p>
+                      )}
                   </div>
-                ))}
+                </div>
+              )}
+            </div>
+
+            {/* Safety Notice */}
+            <div className="safety-notice-improved">
+              <div className="notice-icon">
+                <ShieldIcon size={32} />
+              </div>
+              <div className="notice-content">
+                <h4>Clinical Decision Support Notice</h4>
+                <p>
+                  This AI-generated recommendation is a decision support tool.
+                  Final treatment decisions must be made by a qualified
+                  healthcare professional who has reviewed the complete patient
+                  history.
+                </p>
               </div>
             </div>
-          )}
+          </>
+        )}
 
-          {/* Rationale */}
-          <div className="analysis-section rationale">
-            <h3>📝 Clinical Rationale</h3>
-            <div className="rationale-content">
-              <p>
-                <strong>Summary:</strong> {treatmentPlan.rationale?.summary}
-              </p>
-              <p>
-                <strong>Clinical Reasoning:</strong>{" "}
-                {treatmentPlan.rationale?.clinicalReasoning}
-              </p>
-              <p>
-                <strong>Evidence Basis:</strong>{" "}
-                {treatmentPlan.rationale?.evidenceBasis}
-              </p>
+        <div className="step-actions">
+          <button className="btn-secondary" onClick={() => setCurrentStep(0)}>
+            <ChevronLeftIcon size={16} /> Back to Intake
+          </button>
+          {treatmentPlan && (
+            <div className="action-group">
+              <button className="btn-detail" onClick={fetchDetailedView}>
+                <InfoIcon size={16} /> View Full Details
+              </button>
+              <button className="btn-primary" onClick={handleEnterReview}>
+                Proceed to Review <ChevronRightIcon size={16} />
+              </button>
             </div>
-          </div>
-        </>
-      )}
-
-      <div className="step-actions">
-        <button className="btn-secondary" onClick={() => setCurrentStep(0)}>
-          ← Back to Intake
-        </button>
-        <button className="btn-detail" onClick={fetchDetailedView}>
-          🔍 View Full Analysis Details
-        </button>
-        <button className="btn-primary" onClick={handleEnterReview}>
-          Proceed to Review →
-        </button>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Step 2: Doctor Review
   const renderReviewStep = () => {
@@ -1400,16 +1879,21 @@ export default function TreatmentWizard({
 
     return (
       <div className="wizard-content review-step">
-        <h2>Physician Review & Decision</h2>
+        <h2>
+          <TreatmentIcon size={24} />
+          Physician Review & Decision
+        </h2>
 
         {treatmentPlan && (
           <>
             {/* Medications Management Section */}
             <div className="medications-management">
               <div className="section-header">
-                <h3>💊 Medication Plan</h3>
+                <h3>
+                  <MedicationIcon size={18} /> Medication Plan
+                </h3>
                 <button className="btn-add-med" onClick={addNewMedication}>
-                  + Add Medication
+                  <PlusIcon size={14} /> Add
                 </button>
               </div>
 
@@ -1423,11 +1907,17 @@ export default function TreatmentWizard({
                   >
                     <div className="med-card-header">
                       <div className="med-type-badge">
-                        {med.isPrimary
-                          ? "⭐ Primary"
-                          : med.isNew
-                          ? "✨ New"
-                          : `#${index + 1}`}
+                        {med.isPrimary ? (
+                          <>
+                            <StarIcon size={14} /> Primary
+                          </>
+                        ) : med.isNew ? (
+                          <>
+                            <PlusIcon size={14} /> New
+                          </>
+                        ) : (
+                          `#${index + 1}`
+                        )}
                       </div>
                       <div className="med-card-actions">
                         {!med.isPrimary && (
@@ -1436,7 +1926,7 @@ export default function TreatmentWizard({
                             onClick={() => setPrimaryMedication(med.id)}
                             title="Set as primary medication"
                           >
-                            ⭐
+                            <StarIcon size={16} />
                           </button>
                         )}
                         {editableMedications.length > 1 && (
@@ -1445,22 +1935,33 @@ export default function TreatmentWizard({
                             onClick={() => removeMedication(med.id)}
                             title="Remove medication"
                           >
-                            🗑️
+                            <TrashIcon size={16} />
                           </button>
                         )}
                       </div>
                     </div>
 
                     <div className="med-fields-grid">
-                      <div className="med-field">
+                      <div className="med-field med-field-autocomplete">
                         <label>Medication Name *</label>
-                        <input
-                          type="text"
+                        <DrugAutocomplete
                           value={med.name}
-                          onChange={(e) =>
-                            updateMedication(med.id, "name", e.target.value)
+                          onChange={(value) =>
+                            updateMedication(med.id, "name", value)
                           }
-                          placeholder="e.g., Sildenafil"
+                          onSelect={(drug) => {
+                            updateMedication(
+                              med.id,
+                              "name",
+                              `${drug.genericName}${
+                                drug.brandName ? ` (${drug.brandName})` : ""
+                              }`
+                            );
+                            if (drug.strength && !med.dosage) {
+                              updateMedication(med.id, "dosage", drug.strength);
+                            }
+                          }}
+                          placeholder="Search medication..."
                         />
                       </div>
                       <div className="med-field">
@@ -1525,7 +2026,10 @@ export default function TreatmentWizard({
             {/* Modifications Pending */}
             {allMods.length > 0 && (
               <div className="modifications-pending">
-                <h4>📝 Pending Modifications ({allMods.length})</h4>
+                <h4>
+                  <PencilIcon size={16} /> Pending Modifications (
+                  {allMods.length})
+                </h4>
                 <ul>
                   {allMods.map((mod, idx) => (
                     <li key={idx}>
@@ -1541,7 +2045,9 @@ export default function TreatmentWizard({
             {treatmentPlan.safetyAssessment?.overallRiskLevel ===
               "critical" && (
               <div className="critical-warning">
-                <h4>🚨 Critical Risk Warning</h4>
+                <h4>
+                  <AlertIcon size={20} /> Critical Risk Warning
+                </h4>
                 <p>
                   This treatment plan has critical safety concerns. Please
                   review all drug interactions and contraindications carefully
@@ -1557,13 +2063,13 @@ export default function TreatmentWizard({
             {/* Reviewer Information */}
             <div className="reviewer-section">
               <div className="form-group">
-                <label style={{color: "black"}}>Reviewing Physician *</label>
+                <label style={{ color: "black" }}>Reviewing Physician *</label>
                 <input
-                style={{
-                marginTop: "0.25rem",
-                color: "black",
-                border: "2px solid black",
-              }}
+                  style={{
+                    marginTop: "0.25rem",
+                    color: "black",
+                    border: "2px solid black",
+                  }}
                   type="text"
                   value={reviewedBy}
                   onChange={(e) => setReviewedBy(e.target.value)}
@@ -1571,7 +2077,7 @@ export default function TreatmentWizard({
                 />
               </div>
               <div className="form-group">
-                <label style={{color: "black"}}>Review Notes</label>
+                <label style={{ color: "black" }}>Review Notes</label>
                 <textarea
                   value={reviewNotes}
                   onChange={(e) => setReviewNotes(e.target.value)}
@@ -1595,7 +2101,7 @@ export default function TreatmentWizard({
               onClick={handleReject}
               disabled={loading || !reviewedBy.trim()}
             >
-              ✕ Reject
+              <CloseIcon size={16} /> Reject
             </button>
             {allMods.length > 0 ? (
               <button
@@ -1603,7 +2109,7 @@ export default function TreatmentWizard({
                 onClick={handleModify}
                 disabled={loading || !reviewedBy.trim()}
               >
-                ✓ Approve with Modifications
+                <CheckIcon size={16} /> Approve with Modifications
               </button>
             ) : (
               <button
@@ -1611,7 +2117,7 @@ export default function TreatmentWizard({
                 onClick={handleApprove}
                 disabled={loading || !reviewedBy.trim()}
               >
-                ✓ Approve
+                <CheckIcon size={16} /> Approve
               </button>
             )}
           </div>
@@ -1627,7 +2133,7 @@ export default function TreatmentWizard({
     return (
       <div className="wizard-content final-step">
         <h2>
-          ✅ Treatment Plan{" "}
+          <SuccessIcon size={20} /> Treatment Plan{" "}
           {isPostApprovalEdit ? "- Editing Mode" : "Finalized"}
         </h2>
 
@@ -1635,10 +2141,21 @@ export default function TreatmentWizard({
           <>
             <div className="final-status">
               <div className={`status-badge ${treatmentPlan.status}`}>
-                {treatmentPlan.status === "approved" && "✅ Approved"}
-                {treatmentPlan.status === "modified" &&
-                  "✏️ Modified & Approved"}
-                {treatmentPlan.status === "rejected" && "❌ Rejected"}
+                {treatmentPlan.status === "approved" && (
+                  <>
+                    <CheckIcon size={14} /> Approved
+                  </>
+                )}
+                {treatmentPlan.status === "modified" && (
+                  <>
+                    <PencilIcon size={14} /> Modified & Approved
+                  </>
+                )}
+                {treatmentPlan.status === "rejected" && (
+                  <>
+                    <CloseIcon size={14} /> Rejected
+                  </>
+                )}
               </div>
               <p>
                 Reviewed by <strong>{treatmentPlan.reviewedBy}</strong> on{" "}
@@ -1646,7 +2163,8 @@ export default function TreatmentWizard({
               </p>
               {treatmentPlan.postApprovalModifications > 0 && (
                 <p className="post-approval-count">
-                  📝 {treatmentPlan.postApprovalModifications} post-approval
+                  <PencilIcon size={12} />{" "}
+                  {treatmentPlan.postApprovalModifications} post-approval
                   modification(s)
                 </p>
               )}
@@ -1656,7 +2174,9 @@ export default function TreatmentWizard({
             {isPostApprovalEdit ? (
               <>
                 <div className="post-approval-edit-section">
-                  <h3>✏️ Modify Treatment Plan</h3>
+                  <h3>
+                    <PencilIcon size={18} /> Modify Treatment Plan
+                  </h3>
                   <p className="edit-notice">
                     You are making a post-approval modification. All changes
                     will be logged in the audit trail.
@@ -1665,12 +2185,14 @@ export default function TreatmentWizard({
                   {/* Medications Management - reuse from review step */}
                   <div className="medications-management">
                     <div className="section-header">
-                      <h4>💊 Medication Plan</h4>
+                      <h4>
+                        <MedicationIcon size={16} /> Medication Plan
+                      </h4>
                       <button
                         className="btn-add-med"
                         onClick={addNewMedication}
                       >
-                        + Add Medication
+                        <PlusIcon size={14} /> Add
                       </button>
                     </div>
 
@@ -1684,11 +2206,17 @@ export default function TreatmentWizard({
                         >
                           <div className="med-card-header">
                             <div className="med-type-badge">
-                              {med.isPrimary
-                                ? "⭐ Primary"
-                                : med.isNew
-                                ? "✨ New"
-                                : `#${index + 1}`}
+                              {med.isPrimary ? (
+                                <>
+                                  <StarIcon size={14} /> Primary
+                                </>
+                              ) : med.isNew ? (
+                                <>
+                                  <PlusIcon size={14} /> New
+                                </>
+                              ) : (
+                                `#${index + 1}`
+                              )}
                             </div>
                             <div className="med-card-actions">
                               {!med.isPrimary && (
@@ -1697,7 +2225,7 @@ export default function TreatmentWizard({
                                   onClick={() => setPrimaryMedication(med.id)}
                                   title="Set as primary"
                                 >
-                                  ⭐
+                                  <StarIcon size={16} />
                                 </button>
                               )}
                               {editableMedications.length > 1 && (
@@ -1706,26 +2234,39 @@ export default function TreatmentWizard({
                                   onClick={() => removeMedication(med.id)}
                                   title="Remove"
                                 >
-                                  🗑️
+                                  <TrashIcon size={16} />
                                 </button>
                               )}
                             </div>
                           </div>
 
                           <div className="med-fields-grid">
-                            <div className="med-field">
+                            <div className="med-field med-field-autocomplete">
                               <label>Medication Name *</label>
-                              <input
-                                type="text"
+                              <DrugAutocomplete
                                 value={med.name}
-                                onChange={(e) =>
+                                onChange={(value) =>
+                                  updateMedication(med.id, "name", value)
+                                }
+                                onSelect={(drug) => {
                                   updateMedication(
                                     med.id,
                                     "name",
-                                    e.target.value
-                                  )
-                                }
-                                placeholder="e.g., Sildenafil"
+                                    `${drug.genericName}${
+                                      drug.brandName
+                                        ? ` (${drug.brandName})`
+                                        : ""
+                                    }`
+                                  );
+                                  if (drug.strength && !med.dosage) {
+                                    updateMedication(
+                                      med.id,
+                                      "dosage",
+                                      drug.strength
+                                    );
+                                  }
+                                }}
+                                placeholder="Search medication..."
                               />
                             </div>
                             <div className="med-field">
@@ -1782,7 +2323,10 @@ export default function TreatmentWizard({
                   {/* Pending modifications */}
                   {allMods.length > 0 && (
                     <div className="modifications-pending">
-                      <h4>📝 Changes to Save ({allMods.length})</h4>
+                      <h4>
+                        <PencilIcon size={16} /> Changes to Save (
+                        {allMods.length})
+                      </h4>
                       <ul>
                         {allMods.map((mod, idx) => (
                           <li key={idx}>
@@ -1835,7 +2379,7 @@ export default function TreatmentWizard({
                       loading || !reviewedBy.trim() || allMods.length === 0
                     }
                   >
-                    💾 Save Modifications
+                    <SaveIcon size={16} /> Save Modifications
                   </button>
                 </div>
               </>
@@ -1843,7 +2387,9 @@ export default function TreatmentWizard({
               <>
                 {/* Normal View - Final Treatment Summary */}
                 <div className="final-summary">
-                  <h3>📋 Final Treatment Plan</h3>
+                  <h3>
+                    <ClipboardIcon size={18} /> Final Treatment Plan
+                  </h3>
                   <div className="summary-grid">
                     <div className="summary-item">
                       <label>Patient</label>
@@ -1905,7 +2451,7 @@ export default function TreatmentWizard({
                 {treatmentPlan.modifications?.length > 0 && (
                   <div className="modifications-applied">
                     <h3>
-                      ✏️ Modification History (
+                      <HistoryIcon size={18} /> Modification History (
                       {treatmentPlan.modifications.length})
                     </h3>
                     <ul>
@@ -1934,7 +2480,9 @@ export default function TreatmentWizard({
                 {/* Review Notes */}
                 {treatmentPlan.reviewNotes && (
                   <div className="review-notes-final">
-                    <h3>📝 Review Notes</h3>
+                    <h3>
+                      <InfoIcon size={18} /> Review Notes
+                    </h3>
                     <p>{treatmentPlan.reviewNotes}</p>
                   </div>
                 )}
@@ -1942,7 +2490,7 @@ export default function TreatmentWizard({
                 {/* Action Buttons Row */}
                 <div className="final-actions-row">
                   <button className="btn-detail" onClick={fetchDetailedView}>
-                    🔍 View Full Analysis Details
+                    View Full Analysis Details
                   </button>
                   <button
                     className="btn-modify-post"
@@ -1951,16 +2499,14 @@ export default function TreatmentWizard({
                       setMedicationsInitialized(false);
                     }}
                   >
-                    ✏️ Modify Treatment Plan
+                    <PencilIcon size={16} /> Modify Treatment Plan
                   </button>
                   <button
                     className="btn-regenerate"
                     onClick={handleRegenerate}
-                    disabled={regenerating}
+                    disabled={regenerating || generating}
                   >
-                    {regenerating
-                      ? "🔄 Regenerating..."
-                      : "🔄 Re-Analyze with AI"}
+                    <RefreshIcon size={16} /> Re-Analyze with AI
                   </button>
                 </div>
 
@@ -1969,13 +2515,16 @@ export default function TreatmentWizard({
                   className="btn-audit-toggle"
                   onClick={() => setShowAuditLog(!showAuditLog)}
                 >
-                  {showAuditLog ? "Hide" : "Show"} Audit Trail 📜
+                  {showAuditLog ? "Hide" : "Show"} Audit Trail{" "}
+                  <HistoryIcon size={14} />
                 </button>
 
                 {/* Audit Log */}
                 {showAuditLog && (
                   <div className="audit-log-section">
-                    <h3>📜 Complete Audit Trail</h3>
+                    <h3>
+                      <HistoryIcon size={18} /> Complete Audit Trail
+                    </h3>
                     <div className="audit-entries">
                       {auditLog.map((entry, idx) => (
                         <div
@@ -1992,7 +2541,8 @@ export default function TreatmentWizard({
                           </div>
                           <div className="audit-details">
                             <span className="audit-user">
-                              👤 {entry.performedBy?.userName} (
+                              <PatientIcon size={14} />{" "}
+                              {entry.performedBy?.userName} (
                               {entry.performedBy?.role})
                             </span>
                             <span className="audit-desc">
@@ -2024,7 +2574,9 @@ export default function TreatmentWizard({
                       includeMargin={true}
                     />
                     <div className="qr-info">
-                      <h4>📱 Share Treatment Plan</h4>
+                      <h4>
+                        <ShareIcon size={18} /> Share Treatment Plan
+                      </h4>
                       <p>
                         Other doctors can scan this QR code to view the complete
                         treatment analysis
@@ -2036,13 +2588,15 @@ export default function TreatmentWizard({
 
                 <div className="step-actions">
                   <button className="btn-secondary" onClick={onBack}>
-                    ← Back to Patients
+                    <ChevronLeftIcon size={18} />
+                    Back to Patients
                   </button>
                   <button
                     className="btn-primary"
                     onClick={handlePrintFullAnalysis}
                   >
-                    🖨️ Print Full Analysis
+                    <PrinterIcon size={18} />
+                    Print Full Analysis
                   </button>
                 </div>
               </>
@@ -2074,15 +2628,15 @@ export default function TreatmentWizard({
   const getRiskLevelIcon = (level) => {
     switch (level?.toLowerCase()) {
       case "critical":
-        return "🔴";
+        return <AlertIcon size={16} className="risk-icon-critical" />;
       case "high":
-        return "🟠";
+        return <RiskIcon size={16} className="risk-icon-high" />;
       case "moderate":
-        return "🟡";
+        return <WarningIcon size={16} className="risk-icon-moderate" />;
       case "low":
-        return "🟢";
+        return <SuccessIcon size={16} className="risk-icon-low" />;
       default:
-        return "⚪";
+        return <InfoIcon size={16} className="risk-icon-unknown" />;
     }
   };
 
@@ -2175,7 +2729,7 @@ export default function TreatmentWizard({
                 color: "white",
               }}
             >
-              📋 Complete Treatment Analysis
+              <ClipboardIcon size={20} /> Complete Treatment Analysis
             </h2>
             <button
               onClick={() => setShowDetailedView(false)}
@@ -2230,16 +2784,21 @@ export default function TreatmentWizard({
                 color: riskLevel === "moderate" ? "#333" : "white",
               }}
             >
-              <div style={{ fontSize: "3rem" }}>
-                {riskLevel === "critical"
-                  ? "🔴"
-                  : riskLevel === "high"
-                  ? "🟠"
-                  : riskLevel === "moderate"
-                  ? "🟡"
-                  : riskLevel === "low"
-                  ? "🟢"
-                  : "⚪"}
+              <div
+                style={{
+                  fontSize: "3rem",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                {riskLevel === "critical" && <AlertIcon size={48} />}
+                {riskLevel === "high" && <RiskIcon size={48} />}
+                {riskLevel === "moderate" && <WarningIcon size={48} />}
+                {riskLevel === "low" && <SuccessIcon size={48} />}
+                {!["critical", "high", "moderate", "low"].includes(
+                  riskLevel
+                ) && <InfoIcon size={48} />}
               </div>
               <div>
                 <h2 style={{ margin: 0, color: "white" }}>
@@ -2320,7 +2879,9 @@ export default function TreatmentWizard({
                 borderRadius: "8px",
               }}
             >
-              <h3 style={{ margin: "0 0 1rem 0" }}>👤 Patient Information</h3>
+              <h3 style={{ margin: "0 0 1rem 0" }}>
+                <PatientIcon size={18} /> Patient Information
+              </h3>
               <div
                 style={{
                   display: "grid",
@@ -2353,7 +2914,9 @@ export default function TreatmentWizard({
                 borderRadius: "8px",
               }}
             >
-              <h3 style={{ margin: "0 0 1rem 0" }}>💊 Primary Medication</h3>
+              <h3 style={{ margin: "0 0 1rem 0" }}>
+                <MedicationIcon size={18} /> Primary Medication
+              </h3>
               {treatment?.primaryMedication ? (
                 <div>
                   <div
@@ -2473,7 +3036,7 @@ export default function TreatmentWizard({
                 }}
               >
                 <h3 style={{ margin: "0 0 1rem 0" }}>
-                  ⚠️ Drug Interactions (
+                  <WarningIcon size={16} /> Drug Interactions (
                   {detailedData.currentPlan.drugInteractions.length})
                 </h3>
                 {detailedData.currentPlan.drugInteractions.map(
@@ -2569,7 +3132,9 @@ export default function TreatmentWizard({
                 borderRadius: "8px",
               }}
             >
-              <h3 style={{ margin: "0 0 1rem 0" }}>📝 Clinical Rationale</h3>
+              <h3 style={{ margin: "0 0 1rem 0" }}>
+                <InfoIcon size={18} /> Clinical Rationale
+              </h3>
               {detailedData.currentPlan?.rationale ? (
                 typeof detailedData.currentPlan.rationale === "string" ? (
                   <p style={{ margin: 0, lineHeight: 1.6 }}>
@@ -2675,7 +3240,7 @@ export default function TreatmentWizard({
                 }}
               >
                 <h3 style={{ margin: "0 0 1rem 0" }}>
-                  🔄 Alternative Treatments
+                  <RefreshIcon size={16} /> Alternative Treatments
                 </h3>
                 {detailedData.currentPlan.alternatives.map((alt, idx) => (
                   <div
@@ -2708,7 +3273,9 @@ export default function TreatmentWizard({
                 borderRadius: "8px",
               }}
             >
-              <h3 style={{ margin: "0 0 1rem 0" }}>📜 Audit Trail</h3>
+              <h3 style={{ margin: "0 0 1rem 0" }}>
+                <HistoryIcon size={18} /> Audit Trail
+              </h3>
               {auditLog && auditLog.length > 0 ? (
                 <div>
                   {auditLog.map((entry, idx) => (
@@ -2822,7 +3389,7 @@ export default function TreatmentWizard({
                 e.target.style.color = "#0066cc";
               }}
             >
-              🖨️ Print Full Analysis
+              <PrinterIcon size={16} /> Print Full Analysis
             </button>
             <button
               onClick={() => setShowDetailedView(false)}
@@ -2871,7 +3438,7 @@ export default function TreatmentWizard({
                 if (!regenerating) e.target.style.background = "#0066cc";
               }}
             >
-              🔄 Re-Analyze / Regenerate
+              <RefreshIcon size={16} /> Re-Analyze / Regenerate
             </button>
           </div>
         </div>
@@ -2883,8 +3450,7 @@ export default function TreatmentWizard({
     return (
       <div className="treatment-wizard">
         <div className="loading-state">
-          <div className="spinner"></div>
-          <p>Loading treatment plan...</p>
+          <LoadingSpinner size="lg" text="Loading treatment plan..." />
         </div>
       </div>
     );
@@ -2894,7 +3460,7 @@ export default function TreatmentWizard({
     <div className="treatment-wizard">
       <div className="wizard-header">
         <button className="back-btn" onClick={onBack}>
-          ← Back
+          <ChevronLeftIcon size={16} /> Back
         </button>
         <h1>
           Treatment Workflow: {patient.firstName} {patient.lastName}
@@ -2905,31 +3471,34 @@ export default function TreatmentWizard({
 
       {error && !loading && (
         <div className="wizard-error">
-          <p>⚠️ {error}</p>
+          <p>
+            <WarningIcon size={18} /> {error}
+          </p>
           <button onClick={() => setError(null)}>Dismiss</button>
         </div>
       )}
 
-      {generating && (
-        <div className="generating-overlay">
-          <div className="spinner"></div>
-          <p>Analyzing patient data with AI...</p>
-          <p className="sub-text">
-            Checking drug interactions, contraindications, and generating
-            recommendations...
-          </p>
-        </div>
-      )}
+      {/* AI Generation Overlay - Shows when generating or regenerating */}
+      <AIGenerationOverlay
+        isVisible={generating || regenerating}
+        isRegenerating={regenerating}
+        patientName={
+          `${patient?.firstName || ""} ${patient?.lastName || ""}`.trim() ||
+          "patient"
+        }
+        error={generationError}
+      />
 
-      {regenerating && (
-        <div className="generating-overlay">
-          <div className="spinner"></div>
-          <p>Re-analyzing with AI...</p>
-          <p className="sub-text">
-            Regenerating treatment plan with updated patient data...
-          </p>
-        </div>
-      )}
+      {/* Regenerate Confirmation Modal */}
+      <RegenerateConfirmModal
+        isVisible={showRegenerateConfirm}
+        onConfirm={confirmRegenerate}
+        onCancel={() => setShowRegenerateConfirm(false)}
+        patientName={
+          `${patient?.firstName || ""} ${patient?.lastName || ""}`.trim() ||
+          "patient"
+        }
+      />
 
       {!generating && !regenerating && (
         <>
@@ -2942,6 +3511,15 @@ export default function TreatmentWizard({
 
       {/* Detailed View Modal */}
       {renderDetailedViewModal()}
+
+      {/* Alert Modal */}
+      <AlertModal
+        isOpen={alertModal.isOpen}
+        onClose={() => setAlertModal({ ...alertModal, isOpen: false })}
+        title={alertModal.title}
+        message={alertModal.message}
+        type={alertModal.type}
+      />
     </div>
   );
 }

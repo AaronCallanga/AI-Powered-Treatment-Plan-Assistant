@@ -396,4 +396,62 @@ router.post("/quick-query", async (req, res) => {
   }
 });
 
+// POST - Text-to-speech conversion using OpenAI TTS
+router.post("/tts", async (req, res) => {
+  try {
+    const { text, voice = "nova" } = req.body;
+
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Text is required" });
+    }
+
+    // Clean the text for TTS - remove markdown formatting
+    const cleanText = text
+      .replace(/#{1,6}\s/g, "") // Remove headers
+      .replace(/\*\*(.*?)\*\*/g, "$1") // Remove bold
+      .replace(/\*(.*?)\*/g, "$1") // Remove italics
+      .replace(/`(.*?)`/g, "$1") // Remove inline code
+      .replace(/^[-•]\s/gm, "") // Remove bullet points
+      .replace(/^\d+\.\s/gm, "") // Remove numbered lists
+      .replace(/\n{3,}/g, "\n\n") // Reduce multiple newlines
+      .trim();
+
+    // Limit text length for TTS (OpenAI has a 4096 character limit)
+    const truncatedText =
+      cleanText.length > 4000
+        ? cleanText.substring(0, 4000) + "..."
+        : cleanText;
+
+    // Valid voices: alloy, echo, fable, onyx, nova, shimmer
+    const validVoices = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
+    const selectedVoice = validVoices.includes(voice) ? voice : "nova";
+
+    const response = await getOpenAIClient().audio.speech.create({
+      model: "tts-1-hd", // High-quality TTS model
+      voice: selectedVoice,
+      input: truncatedText,
+      response_format: "mp3",
+      speed: 1.0,
+    });
+
+    // Get the audio as a buffer
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    // Set appropriate headers for audio response
+    res.set({
+      "Content-Type": "audio/mpeg",
+      "Content-Length": buffer.length,
+      "Cache-Control": "no-cache",
+    });
+
+    res.send(buffer);
+  } catch (error) {
+    console.error("TTS error:", error);
+    res.status(500).json({
+      message: "Failed to generate speech",
+      error: error.message,
+    });
+  }
+});
+
 module.exports = router;

@@ -1,5 +1,20 @@
 import { useState, useRef, useCallback } from "react";
 import { consultationAPI } from "../api/patientAPI";
+import {
+  ClipboardIcon,
+  MicIcon,
+  AudioIcon,
+  VideoIcon,
+  RocketIcon,
+  WarningIcon,
+  DocumentIcon,
+  SearchIcon,
+  SuccessIcon,
+  RefreshIcon,
+  CloseIcon,
+} from "./Icons";
+import LoadingSpinner from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./ConsultationUpload.css";
 
 // Helper function to format complex data structures
@@ -90,7 +105,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
   const validateAndSetFile = (selectedFile) => {
     setError("");
 
-    // Check file extension as fallback
     const allowedExtensions = [
       ".mp3",
       ".mp4",
@@ -104,7 +118,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
       .toLowerCase()
       .substring(selectedFile.name.lastIndexOf("."));
 
-    // Check file type
     if (
       !acceptedTypes.includes(selectedFile.type) &&
       !allowedExtensions.includes(ext)
@@ -115,7 +128,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
       return;
     }
 
-    // Check file size (25MB limit - Whisper API requirement)
     if (selectedFile.size > 25 * 1024 * 1024) {
       setError(
         "File too large. Maximum size is 25MB (Whisper API limit). Please use a shorter recording or compress the file."
@@ -143,7 +155,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
     setProcessingStage("Uploading file...");
 
     try {
-      // Upload with progress tracking
       setProcessingStage("Uploading file...");
       const response = await consultationAPI.uploadMedia(file, (progress) => {
         setUploadProgress(progress);
@@ -190,19 +201,23 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
   };
 
   const getFileIcon = () => {
-    if (!file) return "📁";
-    if (file.type.startsWith("video/")) return "🎬";
-    return "🎵";
+    if (!file) return <AudioIcon size={24} />;
+    if (file.type.startsWith("video/")) return <VideoIcon size={24} />;
+    return <AudioIcon size={24} />;
   };
 
   return (
     <div className="consultation-upload">
       <div className="upload-header">
-        <h3>📋 Upload Consultation Recording</h3>
-        <p className="upload-description">
-          Upload an audio or video recording of the doctor-patient consultation.
-          AI will transcribe and extract patient information automatically.
-        </p>
+        <ClipboardIcon size={24} />
+        <div>
+          <h3>Upload Consultation Recording</h3>
+          <p className="upload-description">
+            Upload an audio or video recording of the doctor-patient
+            consultation. AI will transcribe and extract patient information
+            automatically.
+          </p>
+        </div>
       </div>
 
       {/* File Drop Zone */}
@@ -216,7 +231,7 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
           onClick={() => fileInputRef.current?.click()}
         >
           <div className="drop-zone-content">
-            <span className="drop-icon">🎤</span>
+            <MicIcon size={40} className="drop-icon" />
             <p className="drop-text">
               Drag & drop your consultation recording here
             </p>
@@ -245,7 +260,7 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
               <span className="file-size">{formatFileSize(file.size)}</span>
             </div>
             <button className="clear-file-btn" onClick={handleClearFile}>
-              ✕
+              <CloseIcon size={16} />
             </button>
           </div>
           <button
@@ -253,7 +268,8 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
             onClick={handleUpload}
             disabled={uploading}
           >
-            🚀 Process Recording
+            <RocketIcon size={18} />
+            <span>Process Recording</span>
           </button>
         </div>
       )}
@@ -261,7 +277,7 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
       {/* Upload Progress */}
       {uploading && (
         <div className="upload-progress">
-          <div className="progress-spinner"></div>
+          <LoadingSpinner size="lg" />
           <div className="progress-info">
             <span className="progress-stage">{processingStage}</span>
             {uploadProgress < 100 && (
@@ -284,7 +300,7 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
       {/* Error Message */}
       {error && (
         <div className="upload-error">
-          <span className="error-icon">⚠️</span>
+          <WarningIcon size={18} />
           <span>{error}</span>
         </div>
       )}
@@ -294,7 +310,10 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
         <div className="extraction-results">
           {/* Transcription */}
           <div className="result-section">
-            <h4>📝 Transcription</h4>
+            <h4>
+              <DocumentIcon size={18} />
+              <span>Transcription</span>
+            </h4>
             <div className="transcription-meta">
               <span>Duration: {Math.round(transcription.duration)}s</span>
               <span>Language: {transcription.language?.toUpperCase()}</span>
@@ -304,9 +323,11 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
 
           {/* Extracted Data Preview */}
           <div className="result-section">
-            <h4>🔍 Extracted Patient Data</h4>
+            <h4>
+              <SearchIcon size={18} />
+              <span>Extracted Patient Data</span>
+            </h4>
             <div className="extracted-data-preview">
-              {/* Basic Info */}
               {(extractedData.firstName || extractedData.lastName) && (
                 <div className="data-group">
                   <label>Patient Name:</label>
@@ -327,8 +348,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   <span>{extractedData.gender}</span>
                 </div>
               )}
-
-              {/* Primary Complaint */}
               {extractedData.primaryComplaint?.condition && (
                 <div className="data-group">
                   <label>Primary Complaint:</label>
@@ -341,20 +360,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   <span>{extractedData.primaryComplaint.description}</span>
                 </div>
               )}
-              {extractedData.primaryComplaint?.duration && (
-                <div className="data-group">
-                  <label>Duration:</label>
-                  <span>{extractedData.primaryComplaint.duration}</span>
-                </div>
-              )}
-              {extractedData.primaryComplaint?.severity && (
-                <div className="data-group">
-                  <label>Severity:</label>
-                  <span>{extractedData.primaryComplaint.severity}</span>
-                </div>
-              )}
-
-              {/* Medical History */}
               {extractedData.medicalHistory?.conditions?.length > 0 && (
                 <div className="data-group">
                   <label>Conditions:</label>
@@ -363,7 +368,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   </span>
                 </div>
               )}
-
               {extractedData.medicalHistory?.allergies?.length > 0 && (
                 <div className="data-group">
                   <label>Allergies:</label>
@@ -372,24 +376,6 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   </span>
                 </div>
               )}
-
-              {extractedData.medicalHistory?.surgeries && (
-                <div className="data-group">
-                  <label>Surgeries:</label>
-                  <span>{extractedData.medicalHistory.surgeries}</span>
-                </div>
-              )}
-
-              {extractedData.medicalHistory?.familyHistory?.length > 0 && (
-                <div className="data-group">
-                  <label>Family History:</label>
-                  <span>
-                    {extractedData.medicalHistory.familyHistory.join(", ")}
-                  </span>
-                </div>
-              )}
-
-              {/* Medications */}
               {extractedData.currentMedications?.length > 0 && (
                 <div className="data-group">
                   <label>Current Medications:</label>
@@ -405,29 +391,12 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   </span>
                 </div>
               )}
-
-              {/* Health Metrics */}
               {extractedData.healthMetrics?.age && (
                 <div className="data-group">
                   <label>Age:</label>
                   <span>{extractedData.healthMetrics.age} years</span>
                 </div>
               )}
-
-              {extractedData.healthMetrics?.weight && (
-                <div className="data-group">
-                  <label>Weight:</label>
-                  <span>{extractedData.healthMetrics.weight} kg</span>
-                </div>
-              )}
-
-              {extractedData.healthMetrics?.height && (
-                <div className="data-group">
-                  <label>Height:</label>
-                  <span>{extractedData.healthMetrics.height} cm</span>
-                </div>
-              )}
-
               {extractedData.healthMetrics?.bloodPressure?.systolic && (
                 <div className="data-group">
                   <label>Blood Pressure:</label>
@@ -437,74 +406,18 @@ const ConsultationUpload = ({ onDataExtracted, onClose }) => {
                   </span>
                 </div>
               )}
-
-              {extractedData.healthMetrics?.heartRate && (
-                <div className="data-group">
-                  <label>Heart Rate:</label>
-                  <span>{extractedData.healthMetrics.heartRate} bpm</span>
-                </div>
-              )}
-
-              {extractedData.healthMetrics?.bloodGlucose && (
-                <div className="data-group">
-                  <label>Blood Glucose:</label>
-                  <span>{extractedData.healthMetrics.bloodGlucose} mg/dL</span>
-                </div>
-              )}
-
-              {/* Lifestyle */}
-              {extractedData.lifestyle?.smokingStatus && (
-                <div className="data-group">
-                  <label>Smoking Status:</label>
-                  <span>{extractedData.lifestyle.smokingStatus}</span>
-                </div>
-              )}
-
-              {extractedData.lifestyle?.alcoholConsumption && (
-                <div className="data-group">
-                  <label>Alcohol Consumption:</label>
-                  <span>{extractedData.lifestyle.alcoholConsumption}</span>
-                </div>
-              )}
-
-              {extractedData.lifestyle?.exerciseFrequency && (
-                <div className="data-group">
-                  <label>Exercise Frequency:</label>
-                  <span>{extractedData.lifestyle.exerciseFrequency}</span>
-                </div>
-              )}
-
-              {extractedData.lifestyle?.dietType && (
-                <div className="data-group">
-                  <label>Diet Type:</label>
-                  <span>{extractedData.lifestyle.dietType}</span>
-                </div>
-              )}
-
-              {extractedData.lifestyle?.otherFactors && (
-                <div className="data-group">
-                  <label>Other Lifestyle Factors:</label>
-                  <span>{extractedData.lifestyle.otherFactors}</span>
-                </div>
-              )}
-
-              {/* Additional Notes */}
-              {extractedData.extractedNotes && (
-                <div className="data-group notes">
-                  <label>Additional Notes:</label>
-                  <span>{extractedData.extractedNotes}</span>
-                </div>
-              )}
             </div>
           </div>
 
           {/* Action Buttons */}
           <div className="result-actions">
             <button className="apply-data-btn" onClick={handleApplyData}>
-              ✅ Apply to Intake Form
+              <SuccessIcon size={18} />
+              <span>Apply to Intake Form</span>
             </button>
             <button className="clear-btn" onClick={handleClearFile}>
-              🔄 Upload Another
+              <RefreshIcon size={18} />
+              <span>Upload Another</span>
             </button>
           </div>
         </div>

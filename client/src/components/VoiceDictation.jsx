@@ -1,45 +1,28 @@
 import { useState, useEffect, useRef } from "react";
 import { consultationAPI } from "../api/patientAPI";
+import {
+  MicIcon,
+  PlayIcon,
+  PauseIcon,
+  StopIcon,
+  SuccessIcon,
+  TrashIcon,
+  AIIcon,
+  DocumentIcon,
+  SearchIcon,
+  RefreshIcon,
+  ErrorIcon,
+} from "./Icons";
+import LoadingSpinner from "./LoadingSpinner";
+import "./LoadingSpinner.css";
 import "./VoiceDictation.css";
-
-// Helper function to format complex data structures
-const formatDataValue = (value) => {
-  if (value === null || value === undefined) return "";
-  if (typeof value === "string") return value;
-  if (typeof value === "number") return String(value);
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (Array.isArray(value)) {
-    return value
-      .map((item) => {
-        if (typeof item === "object") {
-          return Object.entries(item)
-            .map(([k, v]) => `${k}: ${v}`)
-            .join(", ");
-        }
-        return item;
-      })
-      .join("; ");
-  }
-  if (typeof value === "object") {
-    return Object.entries(value)
-      .map(([k, v]) => {
-        const formattedKey = k.replace(/([A-Z])/g, " $1").trim();
-        if (typeof v === "object") {
-          return `${formattedKey}: ${formatDataValue(v)}`;
-        }
-        return `${formattedKey}: ${v}`;
-      })
-      .join(" | ");
-  }
-  return String(value);
-};
 
 const VoiceDictation = ({ onDataExtracted, onClose }) => {
   const [isRecording, setIsRecording] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioBlob, setAudioBlob] = useState(null);
-  const [status, setStatus] = useState("ready"); // ready, recording, processing, complete, error
+  const [status, setStatus] = useState("ready");
   const [transcript, setTranscript] = useState("");
   const [extractedData, setExtractedData] = useState(null);
   const [error, setError] = useState("");
@@ -49,7 +32,6 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
   const timerRef = useRef(null);
   const streamRef = useRef(null);
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       stopRecording();
@@ -92,7 +74,6 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
       setStatus("recording");
       setRecordingTime(0);
 
-      // Start timer
       timerRef.current = setInterval(() => {
         setRecordingTime((prev) => prev + 1);
       }, 1000);
@@ -142,12 +123,10 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
     setError("");
 
     try {
-      // Convert blob to file
       const file = new File([audioBlob], "recording.webm", {
         type: "audio/webm",
       });
 
-      // Upload and process
       const response = await consultationAPI.uploadMedia(file);
 
       if (response.data.success) {
@@ -192,10 +171,13 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
   return (
     <div className="voice-dictation">
       <div className="dictation-header">
-        <h2>🎤 Voice Dictation</h2>
-        <p>
-          Record the patient consultation and let AI extract the information
-        </p>
+        <MicIcon size={24} />
+        <div>
+          <h2>Voice Dictation</h2>
+          <p>
+            Record the patient consultation and let AI extract the information
+          </p>
+        </div>
       </div>
 
       {error && <div className="dictation-error">{error}</div>}
@@ -205,14 +187,17 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
         <div className="recording-section">
           {!isRecording && !audioBlob && (
             <div className="ready-state">
-              <div className="mic-icon">🎤</div>
+              <div className="mic-icon-large">
+                <MicIcon size={48} />
+              </div>
               <p>Click the button below to start recording</p>
               <button
                 type="button"
                 className="btn-start-recording"
                 onClick={startRecording}
               >
-                Start Recording
+                <MicIcon size={20} />
+                <span>Start Recording</span>
               </button>
             </div>
           )}
@@ -222,7 +207,11 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
               <div
                 className={`recording-indicator ${isPaused ? "paused" : ""}`}
               >
-                {isPaused ? "⏸️" : "🔴"}
+                {isPaused ? (
+                  <PauseIcon size={32} />
+                ) : (
+                  <div className="pulse-ring"></div>
+                )}
               </div>
               <div className="recording-time">{formatTime(recordingTime)}</div>
               <p className="recording-status">
@@ -235,7 +224,8 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                     className="btn-pause"
                     onClick={pauseRecording}
                   >
-                    ⏸️ Pause
+                    <PauseIcon size={18} />
+                    <span>Pause</span>
                   </button>
                 ) : (
                   <button
@@ -243,7 +233,8 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                     className="btn-resume"
                     onClick={resumeRecording}
                   >
-                    ▶️ Resume
+                    <PlayIcon size={18} />
+                    <span>Resume</span>
                   </button>
                 )}
                 <button
@@ -251,7 +242,8 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                   className="btn-stop"
                   onClick={stopRecording}
                 >
-                  ⏹️ Stop
+                  <StopIcon size={18} />
+                  <span>Stop</span>
                 </button>
               </div>
             </div>
@@ -259,7 +251,9 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
 
           {audioBlob && status === "ready" && (
             <div className="recorded-state">
-              <div className="success-icon">✅</div>
+              <div className="success-icon">
+                <SuccessIcon size={40} />
+              </div>
               <p>Recording complete ({formatTime(recordingTime)})</p>
               <div className="recorded-controls">
                 <button
@@ -267,14 +261,16 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                   className="btn-discard"
                   onClick={handleDiscard}
                 >
-                  🗑️ Discard
+                  <TrashIcon size={18} />
+                  <span>Discard</span>
                 </button>
                 <button
                   type="button"
                   className="btn-process"
                   onClick={processRecording}
                 >
-                  🤖 Process with AI
+                  <AIIcon size={18} />
+                  <span>Process with AI</span>
                 </button>
               </div>
             </div>
@@ -285,7 +281,7 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
       {/* Processing State */}
       {status === "processing" && (
         <div className="processing-state">
-          <div className="processing-spinner"></div>
+          <LoadingSpinner size="lg" />
           <p>Processing recording with AI...</p>
           <p className="processing-hint">
             This may take a moment. We're transcribing and extracting patient
@@ -298,23 +294,26 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
       {status === "complete" && extractedData && (
         <div className="complete-state">
           <div className="success-header">
-            <div className="success-icon">✅</div>
+            <SuccessIcon size={32} />
             <h3>Processing Complete!</h3>
           </div>
 
-          {/* Transcript Preview */}
           {transcript && (
             <div className="transcript-preview">
-              <h4>📝 Transcript</h4>
+              <h4>
+                <DocumentIcon size={18} />
+                <span>Transcript</span>
+              </h4>
               <div className="transcript-box">{transcript}</div>
             </div>
           )}
 
-          {/* Extracted Data Summary */}
           <div className="extracted-summary">
-            <h4>🔍 Extracted Information</h4>
+            <h4>
+              <SearchIcon size={18} />
+              <span>Extracted Information</span>
+            </h4>
             <div className="summary-grid">
-              {/* Basic Info */}
               {extractedData.firstName && (
                 <div className="summary-item">
                   <strong>Name:</strong> {extractedData.firstName}{" "}
@@ -331,34 +330,12 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                   <strong>Gender:</strong> {extractedData.gender}
                 </div>
               )}
-
-              {/* Primary Complaint */}
               {extractedData.primaryComplaint?.condition && (
                 <div className="summary-item">
                   <strong>Primary Complaint:</strong>{" "}
                   {extractedData.primaryComplaint.condition}
                 </div>
               )}
-              {extractedData.primaryComplaint?.description && (
-                <div className="summary-item">
-                  <strong>Symptoms:</strong>{" "}
-                  {extractedData.primaryComplaint.description}
-                </div>
-              )}
-              {extractedData.primaryComplaint?.duration && (
-                <div className="summary-item">
-                  <strong>Duration:</strong>{" "}
-                  {extractedData.primaryComplaint.duration}
-                </div>
-              )}
-              {extractedData.primaryComplaint?.severity && (
-                <div className="summary-item">
-                  <strong>Severity:</strong>{" "}
-                  {extractedData.primaryComplaint.severity}
-                </div>
-              )}
-
-              {/* Medical History */}
               {extractedData.medicalHistory?.conditions?.length > 0 && (
                 <div className="summary-item">
                   <strong>Conditions:</strong>{" "}
@@ -371,20 +348,6 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                   {extractedData.medicalHistory.allergies.join(", ")}
                 </div>
               )}
-              {extractedData.medicalHistory?.surgeries && (
-                <div className="summary-item">
-                  <strong>Surgeries:</strong>{" "}
-                  {extractedData.medicalHistory.surgeries}
-                </div>
-              )}
-              {extractedData.medicalHistory?.familyHistory?.length > 0 && (
-                <div className="summary-item">
-                  <strong>Family History:</strong>{" "}
-                  {extractedData.medicalHistory.familyHistory.join(", ")}
-                </div>
-              )}
-
-              {/* Medications */}
               {extractedData.currentMedications?.length > 0 && (
                 <div className="summary-item">
                   <strong>Current Medications:</strong>{" "}
@@ -398,73 +361,9 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
                     .join("; ")}
                 </div>
               )}
-
-              {/* Health Metrics */}
               {extractedData.healthMetrics?.age && (
                 <div className="summary-item">
                   <strong>Age:</strong> {extractedData.healthMetrics.age} years
-                </div>
-              )}
-              {extractedData.healthMetrics?.weight && (
-                <div className="summary-item">
-                  <strong>Weight:</strong> {extractedData.healthMetrics.weight}{" "}
-                  kg
-                </div>
-              )}
-              {extractedData.healthMetrics?.height && (
-                <div className="summary-item">
-                  <strong>Height:</strong> {extractedData.healthMetrics.height}{" "}
-                  cm
-                </div>
-              )}
-              {extractedData.healthMetrics?.bloodPressure?.systolic && (
-                <div className="summary-item">
-                  <strong>Blood Pressure:</strong>{" "}
-                  {extractedData.healthMetrics.bloodPressure.systolic}/
-                  {extractedData.healthMetrics.bloodPressure.diastolic} mmHg
-                </div>
-              )}
-              {extractedData.healthMetrics?.heartRate && (
-                <div className="summary-item">
-                  <strong>Heart Rate:</strong>{" "}
-                  {extractedData.healthMetrics.heartRate} bpm
-                </div>
-              )}
-              {extractedData.healthMetrics?.bloodGlucose && (
-                <div className="summary-item">
-                  <strong>Blood Glucose:</strong>{" "}
-                  {extractedData.healthMetrics.bloodGlucose} mg/dL
-                </div>
-              )}
-
-              {/* Lifestyle */}
-              {extractedData.lifestyle?.smokingStatus && (
-                <div className="summary-item">
-                  <strong>Smoking Status:</strong>{" "}
-                  {extractedData.lifestyle.smokingStatus}
-                </div>
-              )}
-              {extractedData.lifestyle?.alcoholConsumption && (
-                <div className="summary-item">
-                  <strong>Alcohol:</strong>{" "}
-                  {extractedData.lifestyle.alcoholConsumption}
-                </div>
-              )}
-              {extractedData.lifestyle?.exerciseFrequency && (
-                <div className="summary-item">
-                  <strong>Exercise:</strong>{" "}
-                  {extractedData.lifestyle.exerciseFrequency}
-                </div>
-              )}
-              {extractedData.lifestyle?.dietType && (
-                <div className="summary-item">
-                  <strong>Diet:</strong> {extractedData.lifestyle.dietType}
-                </div>
-              )}
-              {extractedData.lifestyle?.otherFactors && (
-                <div className="summary-item">
-                  <strong>Other Factors:</strong>{" "}
-                  {extractedData.lifestyle.otherFactors}
                 </div>
               )}
             </div>
@@ -476,14 +375,16 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
               className="btn-discard"
               onClick={handleDiscard}
             >
-              🔄 Record Again
+              <RefreshIcon size={18} />
+              <span>Record Again</span>
             </button>
             <button
               type="button"
               className="btn-apply"
               onClick={handleApplyData}
             >
-              ✅ Apply to Form
+              <SuccessIcon size={18} />
+              <span>Apply to Form</span>
             </button>
           </div>
         </div>
@@ -492,7 +393,7 @@ const VoiceDictation = ({ onDataExtracted, onClose }) => {
       {/* Error State */}
       {status === "error" && (
         <div className="error-state">
-          <div className="error-icon">❌</div>
+          <ErrorIcon size={40} />
           <p>Failed to process recording</p>
           <button
             type="button"
