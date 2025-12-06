@@ -8,9 +8,17 @@ const {
   DOSAGE_GUIDELINES,
 } = require("../services/ddiRagService");
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Lazy initialization of OpenAI client
+let openai = null;
+
+function getOpenAIClient() {
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  }
+  return openai;
+}
 
 // Chat system prompt for clinical assistant
 const CHAT_SYSTEM_PROMPT = `You are a clinical decision support chatbot for physicians. You help doctors with:
@@ -217,7 +225,7 @@ router.post("/", async (req, res) => {
     });
 
     // Call OpenAI
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: messages,
       temperature: 0.7,
@@ -324,11 +332,9 @@ router.post("/quick-query", async (req, res) => {
     switch (queryType) {
       case "interaction":
         if (!drugs || drugs.length < 2) {
-          return res
-            .status(400)
-            .json({
-              message: "At least 2 drugs required for interaction check",
-            });
+          return res.status(400).json({
+            message: "At least 2 drugs required for interaction check",
+          });
         }
         prompt = `Check for drug-drug interactions between: ${drugs.join(
           ", "
@@ -364,7 +370,7 @@ router.post("/quick-query", async (req, res) => {
     const patientContext = buildPatientContext(patient);
     const ddiContext = buildDDIContext(prompt, patient);
 
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAIClient().chat.completions.create({
       model: "gpt-4o",
       messages: [
         {
